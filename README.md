@@ -110,9 +110,9 @@ exact JSON shape.
 Static files (primary) are CORS-enabled for any origin:
 
 ```
-https://<your-deploy>.vercel.app/data/latest-replay.json
-https://<your-deploy>.vercel.app/data/next-race.json
-https://<your-deploy>.vercel.app/data/season-index.json
+https://f1-pitwall-web.vercel.app/data/latest-replay.json
+https://f1-pitwall-web.vercel.app/data/next-race.json
+https://f1-pitwall-web.vercel.app/data/season-index.json
 ```
 
 Convenience API aliases: `/api/latest-replay`, `/api/next-race`,
@@ -123,10 +123,13 @@ import { RaceReplayWidget } from '@f1pitwall/replay-widget';
 import '@f1pitwall/replay-widget/styles.css';
 
 <RaceReplayWidget
-  replayUrl="https://f1-pitwall.vercel.app/data/latest-replay.json"
+  replayUrl="https://f1-pitwall-web.vercel.app/data/latest-replay.json"
+  nextRaceUrl="https://f1-pitwall-web.vercel.app/data/next-race.json"
   compact
   autoplay
+  speed={4} // 4× playback
   showControls={false}
+  leaderboardLimit={3} // top-3 strip near the track
   showNextRace
 />;
 ```
@@ -157,6 +160,20 @@ which commits `public-data/` back (the next deploy picks it up).
 | `pnpm build`                                             | Build all packages + the web app |
 | `pnpm lint` / `pnpm typecheck` / `pnpm test`             | Lint, typecheck, unit tests (JS) |
 | `pytest` · `ruff check python` · `mypy python/f1pitwall` | Python tests / lint / types      |
+
+## Credits & inspiration
+
+This project was **inspired by** two open-source projects, used as concept
+references only — the code here is an independent implementation:
+
+- [**IAmTomShaw/f1-race-replay**](https://github.com/IAmTomShaw/f1-race-replay) —
+  the desktop replay whose "resample every car onto one clock, then play plain
+  frames" idea and racing-line → track-ribbon rendering shaped the replay engine.
+- [**mar-antaya/2025_f1_predictions**](https://github.com/mar-antaya/2025_f1_predictions)
+  — the prediction project whose feature ideas (qualifying pace, constructor
+  strength, form) informed the podium-prediction scaffolding.
+
+Thanks to both authors. Data via [FastF1](https://docs.fastf1.dev/).
 
 ## Disclaimer
 

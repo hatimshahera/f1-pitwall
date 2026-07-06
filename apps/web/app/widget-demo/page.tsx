@@ -20,17 +20,22 @@ export default function WidgetDemoPage(): React.JSX.Element {
         nextRaceUrl="/data/next-race.json"
         compact
         autoplay
+        speed={4}
         showControls={false}
         showLeaderboard
+        leaderboardLimit={3}
         showNextRace
       />
 
       <pre className="mt-6 overflow-x-auto rounded-xl border border-[color:var(--border)] bg-[color:var(--panel)] p-4 text-xs">
         {`<RaceReplayWidget
-  replayUrl="https://f1-pitwall.vercel.app/data/latest-replay.json"
+  replayUrl="https://f1-pitwall-web.vercel.app/data/latest-replay.json"
+  nextRaceUrl="https://f1-pitwall-web.vercel.app/data/next-race.json"
   compact
   autoplay
+  speed={4}
   showControls={false}
+  leaderboardLimit={3}
   showNextRace
 />`}
       </pre>

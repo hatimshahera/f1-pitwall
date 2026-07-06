@@ -3,6 +3,12 @@
 A short technical case study of the decisions behind this project — what I chose,
 why, and where I hit real trade-offs. Not a changelog.
 
+It was **inspired by** two open-source projects, used as concept references only:
+[IAmTomShaw/f1-race-replay](https://github.com/IAmTomShaw/f1-race-replay) (the
+replay engine idea and track rendering) and
+[mar-antaya/2025_f1_predictions](https://github.com/mar-antaya/2025_f1_predictions)
+(prediction feature ideas). Where they're referenced below, that's what I mean.
+
 ## Why build it
 
 I wanted one project that exercises the full path from **messy real-world data**
@@ -79,7 +85,7 @@ as:
 
 ```tsx
 <RaceReplayWidget
-  replayUrl="https://f1-pitwall.vercel.app/data/latest-replay.json"
+  replayUrl="https://f1-pitwall-web.vercel.app/data/latest-replay.json"
   compact
   autoplay
   showControls={false}

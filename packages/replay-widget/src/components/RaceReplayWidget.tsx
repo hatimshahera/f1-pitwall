@@ -18,6 +18,10 @@ export interface RaceReplayWidgetProps {
   showControls?: boolean;
   /** Show the live leaderboard. */
   showLeaderboard?: boolean;
+  /** Max leaderboard rows (e.g. 3 for a compact "top 3" strip). */
+  leaderboardLimit?: number;
+  /** Initial playback speed multiplier (e.g. 4 for a 4× autoplay embed). */
+  speed?: number;
   /** Show the next-race card (requires `nextRaceUrl`). */
   showNextRace?: boolean;
   /** URL of a next-race JSON document, used when `showNextRace` is set. */
@@ -38,6 +42,8 @@ export function RaceReplayWidget({
   autoplay = false,
   showControls = true,
   showLeaderboard = true,
+  leaderboardLimit,
+  speed = 1,
   showNextRace = false,
   nextRaceUrl,
   showDisclaimer = true,
@@ -47,7 +53,7 @@ export function RaceReplayWidget({
   const engine = useReplayEngine(state.data, {
     autoplay,
     loop: compact && autoplay,
-    initialSpeed: 1,
+    initialSpeed: speed,
   });
 
   const rootClass = ['f1pw-widget', compact ? 'f1pw-widget--compact' : '', className]
@@ -94,7 +100,7 @@ export function RaceReplayWidget({
             replay={replay}
             engine={engine}
             className="f1pw-leaderboard"
-            limit={compact ? 5 : undefined}
+            limit={leaderboardLimit ?? (compact ? 5 : undefined)}
             showGap={!compact}
           />
         )}
