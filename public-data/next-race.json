@@ -1,0 +1,15 @@
+{
+  "year": 2026,
+  "raceName": "Belgian Grand Prix",
+  "round": 10,
+  "circuit": "Spa-Francorchamps",
+  "country": "Belgium",
+  "date": "2026-07-19T13:00:00Z",
+  "sessions": [
+    {
+      "name": "Race",
+      "startsAt": "2026-07-19T13:00:00Z"
+    }
+  ],
+  "generatedAt": "2026-07-06T18:39:48Z"
+}

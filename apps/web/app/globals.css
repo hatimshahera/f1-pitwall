@@ -1,0 +1,42 @@
+@import 'tailwindcss';
+@import '@f1pitwall/replay-widget/styles.css';
+
+:root {
+  color-scheme: light dark;
+  --bg: #f4f5f7;
+  --panel: #ffffff;
+  --fg: #14171b;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --accent: #e10600;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0d10;
+    --panel: #14171b;
+    --fg: #e6e8eb;
+    --muted: #9aa0a6;
+    --border: #23262b;
+  }
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--fg);
+  margin: 0;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}

@@ -1,0 +1,58 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "f1pitwall"
+version = "0.1.0"
+description = "Data-processing and prediction pipeline for f1-pitwall: FastF1 -> replay JSON."
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "f1-pitwall contributors" }]
+dependencies = [
+  "pydantic>=2.6",
+  "numpy>=1.26",
+  "typer>=0.12",
+]
+
+[project.optional-dependencies]
+# Real F1 data (heavier; not needed for the synthetic/demo generator).
+data = [
+  "fastf1>=3.3",
+  "pandas>=2.1",
+]
+# Experimental prediction pipeline (Phase 3).
+predictions = [
+  "scikit-learn>=1.4",
+  "pandas>=2.1",
+]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.6",
+  "mypy>=1.10",
+]
+
+[project.scripts]
+f1pitwall = "f1pitwall.cli:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["python/f1pitwall"]
+
+[tool.ruff]
+line-length = 100
+src = ["python"]
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.pytest.ini_options]
+testpaths = ["python/tests"]
+pythonpath = ["python"]
+
+[tool.mypy]
+# Runtime supports 3.10+, but type-check at 3.12 so third-party stubs (numpy)
+# that use PEP 695 `type` statements parse. Our own code stays 3.10-compatible.
+python_version = "3.12"
+files = ["python/f1pitwall"]
+ignore_missing_imports = true

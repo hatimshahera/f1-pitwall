@@ -1,0 +1,11 @@
+node_modules
+.claude
+.venv
+dist
+.next
+out
+coverage
+public-data
+apps/web/public/data
+python
+pnpm-lock.yaml

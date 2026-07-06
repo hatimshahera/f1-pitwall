@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.vitest/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg-info/
+.eggs/
+
+# FastF1 telemetry cache (can be large; regenerate locally)
+.fastf1-cache/
+python/.fastf1-cache/
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Generated static copy inside the web app (source of truth is /public-data)
+apps/web/public/data/
+
+# Claude Code local settings
+.claude/
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log

@@ -1,0 +1,240 @@
+/*
+ * Default styling for @f1pitwall/replay-widget. Import once in your app:
+ *   import '@f1pitwall/replay-widget/styles.css';
+ *
+ * The component classes (.f1pw-hud, .f1pw-leaderboard, .f1pw-controls, …) are
+ * standalone so they can be composed individually (as the f1-pitwall dashboard
+ * does) or together inside <RaceReplayWidget> (.f1pw-widget). Theme-aware via
+ * prefers-color-scheme; override any variable or class freely.
+ */
+
+:root {
+  --f1pw-bg: #ffffff;
+  --f1pw-fg: #1a1c1e;
+  --f1pw-muted: #6b7280;
+  --f1pw-border: #e5e7eb;
+  --f1pw-surface: #f7f8fa;
+  --f1pw-accent: #e10600;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --f1pw-bg: #0b0d10;
+    --f1pw-fg: #e6e8eb;
+    --f1pw-muted: #9aa0a6;
+    --f1pw-border: #23262b;
+    --f1pw-surface: #14171b;
+  }
+}
+
+/* ---- Container (batteries-included widget) ------------------------------- */
+.f1pw-widget {
+  color: var(--f1pw-fg);
+  background: var(--f1pw-bg);
+  border: 1px solid var(--f1pw-border);
+  border-radius: 12px;
+  padding: 12px;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.f1pw-widget [data-f1pw='stage'] {
+  display: grid;
+  grid-template-columns: 1fr 200px;
+  grid-template-rows: auto 1fr;
+  gap: 10px;
+}
+.f1pw-widget [data-f1pw='canvas-wrap'] {
+  grid-column: 1;
+  grid-row: 2;
+  aspect-ratio: 16 / 10;
+  min-height: 240px;
+  background: var(--f1pw-surface);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.f1pw-widget .f1pw-hud {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+.f1pw-widget .f1pw-leaderboard {
+  grid-column: 2;
+  grid-row: 2;
+}
+.f1pw-widget--compact [data-f1pw='stage'] {
+  grid-template-columns: 1fr;
+}
+.f1pw-widget--compact .f1pw-leaderboard {
+  grid-column: 1;
+  grid-row: 3;
+  flex-direction: row;
+  flex-wrap: wrap;
+}
+.f1pw-widget--compact [data-f1pw='canvas-wrap'] {
+  aspect-ratio: 16 / 9;
+  min-height: 180px;
+}
+
+/* ---- HUD ----------------------------------------------------------------- */
+.f1pw-hud {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 13px;
+}
+.f1pw-hud [data-col='race'] {
+  font-weight: 600;
+}
+.f1pw-hud [data-col='lap'],
+.f1pw-hud [data-col='time'] {
+  color: var(--f1pw-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Leaderboard --------------------------------------------------------- */
+.f1pw-leaderboard {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  overflow: auto;
+}
+.f1pw-leaderboard li {
+  display: grid;
+  grid-template-columns: 20px 8px 1fr auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--f1pw-surface);
+  font-variant-numeric: tabular-nums;
+}
+.f1pw-leaderboard li[data-status='RETIRED'] {
+  opacity: 0.45;
+}
+.f1pw-leaderboard [data-col='pos'] {
+  color: var(--f1pw-muted);
+  text-align: right;
+}
+.f1pw-leaderboard [data-col='color'] {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.f1pw-leaderboard [data-col='code'] {
+  font-weight: 600;
+}
+.f1pw-leaderboard [data-col='tyre'] {
+  color: var(--f1pw-muted);
+  font-weight: 600;
+}
+.f1pw-leaderboard [data-col='gap'] {
+  color: var(--f1pw-muted);
+}
+
+/* ---- Controls ------------------------------------------------------------ */
+.f1pw-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.f1pw-controls [data-row='buttons'] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.f1pw-controls button {
+  border: 1px solid var(--f1pw-border);
+  background: var(--f1pw-surface);
+  color: var(--f1pw-fg);
+  border-radius: 8px;
+  min-width: 34px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 14px;
+}
+.f1pw-controls button[data-primary] {
+  background: var(--f1pw-accent);
+  border-color: var(--f1pw-accent);
+  color: #fff;
+}
+.f1pw-controls select {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--f1pw-border);
+  background: var(--f1pw-surface);
+  color: var(--f1pw-fg);
+  padding: 0 6px;
+}
+.f1pw-controls [data-row='seek'] {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.f1pw-controls [data-row='seek'] input[type='range'] {
+  flex: 1;
+  accent-color: var(--f1pw-accent);
+}
+.f1pw-controls [data-col='time'] {
+  font-size: 12px;
+  color: var(--f1pw-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ---- Next race + disclaimer + status ------------------------------------- */
+.f1pw-next-race {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 13px;
+}
+.f1pw-next-race [data-col='label'] {
+  color: var(--f1pw-muted);
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.f1pw-next-race [data-col='name'] {
+  font-weight: 600;
+}
+.f1pw-next-race [data-col='date'] {
+  color: var(--f1pw-muted);
+}
+.f1pw-disclaimer {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--f1pw-muted);
+}
+.f1pw-widget [data-f1pw='status'] {
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--f1pw-muted);
+  font-size: 14px;
+}
+.f1pw-widget [data-f1pw='status'][data-variant='error'] {
+  color: var(--f1pw-accent);
+}
+
+.f1pw-widget .sr-only,
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

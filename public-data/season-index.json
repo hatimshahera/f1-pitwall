@@ -1,0 +1,86 @@
+{
+  "year": 2026,
+  "generatedAt": "2026-07-06T18:39:48Z",
+  "races": [
+    {
+      "round": 1,
+      "raceName": "Australian Grand Prix",
+      "slug": "australian-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-03-08T04:00:00Z"
+    },
+    {
+      "round": 2,
+      "raceName": "Chinese Grand Prix",
+      "slug": "chinese-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-03-15T07:00:00Z"
+    },
+    {
+      "round": 3,
+      "raceName": "Japanese Grand Prix",
+      "slug": "japanese-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-03-29T05:00:00Z"
+    },
+    {
+      "round": 4,
+      "raceName": "Miami Grand Prix",
+      "slug": "miami-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-05-03T17:00:00Z"
+    },
+    {
+      "round": 5,
+      "raceName": "Canadian Grand Prix",
+      "slug": "canadian-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-05-24T20:00:00Z"
+    },
+    {
+      "round": 6,
+      "raceName": "Monaco Grand Prix",
+      "slug": "monaco-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-06-07T13:00:00Z"
+    },
+    {
+      "round": 7,
+      "raceName": "Barcelona Grand Prix",
+      "slug": "barcelona-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-06-14T13:00:00Z"
+    },
+    {
+      "round": 8,
+      "raceName": "Austrian Grand Prix",
+      "slug": "austrian-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-06-28T13:00:00Z"
+    },
+    {
+      "round": 9,
+      "raceName": "British Grand Prix",
+      "slug": "british-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-07-05T14:00:00Z"
+    },
+    {
+      "round": 10,
+      "raceName": "Sample Grand Prix",
+      "slug": "sample-grand-prix",
+      "session": "R",
+      "hasReplay": true,
+      "date": null
+    }
+  ]
+}

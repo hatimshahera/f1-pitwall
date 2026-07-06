@@ -1,0 +1,59 @@
+# Manual data-refresh workflow.
+#
+# Phase 1: manual trigger only (workflow_dispatch). It regenerates the season
+# index / next race (real FastF1) and refreshes the synthetic sample replay,
+# then commits public-data/ back to the repo if anything changed.
+#
+# A scheduled trigger is intentionally left commented out until real full-race
+# replays are shipped (Phase 2). To enable weekly refresh, uncomment `schedule`.
+
+name: Generate data
+
+on:
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Season year"
+        required: true
+        default: "2026"
+  # schedule:
+  #   - cron: "0 6 * * MON"   # Mondays 06:00 UTC (day after most races)
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package with data extra
+        run: pip install -e '.[data]'
+
+      - name: Generate season index + next race (real FastF1)
+        run: python -m f1pitwall generate-season-index --year "${{ inputs.year }}"
+
+      - name: Refresh synthetic sample replay
+        run: python -m f1pitwall generate-replay --demo --year "${{ inputs.year }}"
+
+      # Real full-race replay generation is available but not committed by default
+      # (see docs/lesson.md). Uncomment to attempt it:
+      # - name: Generate latest race replay
+      #   run: python -m f1pitwall generate-replay --year "${{ inputs.year }}" --race latest
+
+      - name: Commit updated data
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add public-data
+          if git diff --staged --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): refresh generated data [skip ci]"
+            git push
+          fi

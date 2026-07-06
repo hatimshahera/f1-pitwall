@@ -1,0 +1,33 @@
+{
+  "name": "@f1pitwall/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "f1-pitwall dashboard — Next.js app deployed on Vercel.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "predev": "node scripts/copy-data.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/copy-data.mjs",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "echo \"no web unit tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "@f1pitwall/replay-widget": "workspace:*",
+    "@f1pitwall/shared": "workspace:*",
+    "next": "^15.1.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "server-only": "^0.0.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}
