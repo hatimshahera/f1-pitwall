@@ -128,7 +128,9 @@ def _leader_gaps(timeline: np.ndarray, cars: list[CarSamples]) -> dict[str, np.n
     progress curves.
     """
     t_arr = np.asarray(timeline, dtype=float)
-    leader_progress = np.vstack([c.progress for c in cars]).max(axis=0)
+    # The leading edge only ever moves forward; accumulate the per-frame max so the
+    # progress->time curve is strictly usable by np.interp (its xp must be sorted).
+    leader_progress = np.maximum.accumulate(np.vstack([c.progress for c in cars]).max(axis=0))
     gaps: dict[str, np.ndarray] = {}
     for car in cars:
         lead_time = np.interp(car.progress, leader_progress, t_arr)

@@ -135,22 +135,34 @@ def _race_progress(
     cum: np.ndarray,
     track_len: float,
 ) -> np.ndarray:
-    """Continuous race progress = completed laps + along-centerline distance.
+    """Continuous race progress = ``official lap`` + within-lap fraction.
 
     Each car position is projected onto the nearest centerline point (ignoring
-    pit-lane detours, unlike raw path length), giving an along-track distance that
-    updates every frame. Anchoring by official lap number keeps lapped cars
-    correctly behind. This is what the live leaderboard is ranked by, so it
-    reorders continuously instead of once per lap.
+    pit-lane detours, unlike raw path length) to get a within-lap fraction in
+    [0, 1), which the live leaderboard uses to reorder every frame. Cross-lap
+    order comes from the **official lap number**, which is reliable — so a
+    mis-projection near the start/finish line (where the nearest point can snap to
+    the far end of the line) can only nudge same-lap ordering for a single frame,
+    never lock a car a whole lap ahead. Deliberately NO cumulative
+    ``maximum.accumulate`` here: that previously locked in such a bogus jump for
+    the rest of the race and scrambled the order.
     """
-    # Nearest centerline index per frame (vectorised, per car).
     dx = xs[:, None] - cx[None, :]
     dy = ys[:, None] - cy[None, :]
     nearest = np.argmin(dx * dx + dy * dy, axis=1)
-    arclen = cum[nearest]
-    progress = np.maximum(laps - 1, 0) * track_len + arclen
-    # Enforce monotonicity so a start/finish-line wrap never dips the position.
-    return np.maximum.accumulate(progress)
+    fraction = cum[nearest] / track_len if track_len > 0 else np.zeros_like(cum[nearest])
+    progress = np.maximum(laps - 1, 0) + fraction
+    # A car exactly on the start/finish line can snap to the far end of the
+    # centerline, spiking its fraction to ~1 for a single frame. Median-filter it
+    # out so it neither blips the order nor (via the leader envelope) inflates gaps.
+    return _median3(progress)
+
+
+def _median3(a: np.ndarray) -> np.ndarray:
+    """3-point median filter — removes single-frame spikes, numpy-only."""
+    prev = np.concatenate([a[:1], a[:-1]])
+    nxt = np.concatenate([a[1:], a[-1:]])
+    return np.median(np.stack([prev, a, nxt]), axis=0)
 
 
 def _circuit_rotation_radians(session) -> float | None:
