@@ -80,7 +80,7 @@ never reconciles 60 times a second.
 
 ## How data reaches other sites
 
-The reusable piece is `@f1pitwall/replay-widget`. The personal site will use it
+The reusable piece is `@hatimshahera/f1-pitwall-replay-widget`. The personal site will use it
 as:
 
 ```tsx

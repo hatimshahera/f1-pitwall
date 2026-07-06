@@ -36,7 +36,7 @@ widget) animate it — deployable free on Vercel with no always-on backend.
 FastF1 ──► python/f1pitwall ──► public-data/*.json ──► apps/web (Vercel) ──► browser
                 (generate)         (source of truth)      (dashboard + API)      │
                                                                                  ▼
-                                            personal website ◄── @f1pitwall/replay-widget
+                                            personal website ◄── @hatimshahera/f1-pitwall-replay-widget
 ```
 
 Full write-up: **[docs/architecture.md](docs/architecture.md)** ·
@@ -89,13 +89,13 @@ python -m f1pitwall generate-season-index --year 2026     # season index + next 
 
 ### Publishing the widget to npm
 
-`@f1pitwall/replay-widget` is set up to publish as a self-contained package
+`@hatimshahera/f1-pitwall-replay-widget` is set up to publish as a self-contained package
 (bundles `@f1pitwall/shared` + zod; React stays a peer). From the repo root:
 
 ```bash
 npm login                                                  # once
 # the @f1pitwall scope needs a (free) npm org of that name, or rename the package
-pnpm --filter @f1pitwall/replay-widget publish --access public
+pnpm --filter @hatimshahera/f1-pitwall-replay-widget publish --access public
 ```
 
 `prepublishOnly` builds `dist/` (JS + types + `styles.css`) automatically. In-repo,
@@ -134,8 +134,8 @@ Convenience API aliases: `/api/latest-replay`, `/api/next-race`,
 `/api/season-index`. Or drop in the widget:
 
 ```tsx
-import { RaceReplayWidget } from '@f1pitwall/replay-widget';
-import '@f1pitwall/replay-widget/styles.css';
+import { RaceReplayWidget } from '@hatimshahera/f1-pitwall-replay-widget';
+import '@hatimshahera/f1-pitwall-replay-widget/styles.css';
 
 <RaceReplayWidget
   replayUrl="https://f1-pitwall-web.vercel.app/data/latest-replay.json"

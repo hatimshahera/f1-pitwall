@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Consume the workspace packages as TypeScript source (no prebuild step).
-  transpilePackages: ['@f1pitwall/shared', '@f1pitwall/replay-widget'],
+  transpilePackages: ['@f1pitwall/shared', '@hatimshahera/f1-pitwall-replay-widget'],
 
   // We lint the whole monorepo with the root flat ESLint config via `pnpm lint`,
   // so Next's own build-time lint pass is redundant here.

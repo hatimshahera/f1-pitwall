@@ -1,6 +1,6 @@
 'use client';
 
-import { formatRaceDate } from '@f1pitwall/replay-widget';
+import { formatRaceDate } from '@hatimshahera/f1-pitwall-replay-widget';
 import type { NextRace } from '@f1pitwall/shared';
 
 /** Richer "next race" panel for the dashboard (the widget has a compact one). */

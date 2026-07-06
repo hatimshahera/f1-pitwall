@@ -1,5 +1,5 @@
 /**
- * @f1pitwall/replay-widget — a reusable React/Canvas F1 race-replay engine.
+ * @hatimshahera/f1-pitwall-replay-widget — a reusable React/Canvas F1 race-replay engine.
  *
  * Two ways to consume it:
  *  - <RaceReplayWidget replayUrl="…" /> for a batteries-included embed.

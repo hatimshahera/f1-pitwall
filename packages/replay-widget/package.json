@@ -1,5 +1,5 @@
 {
-  "name": "@f1pitwall/replay-widget",
+  "name": "@hatimshahera/f1-pitwall-replay-widget",
   "version": "0.1.0",
   "description": "Reusable React/Canvas F1 race-replay engine and widget.",
   "license": "MIT",

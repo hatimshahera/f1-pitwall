@@ -15,7 +15,7 @@
     "test": "echo \"no web unit tests yet\" && exit 0"
   },
   "dependencies": {
-    "@f1pitwall/replay-widget": "workspace:*",
+    "@hatimshahera/f1-pitwall-replay-widget": "workspace:*",
     "@f1pitwall/shared": "workspace:*",
     "next": "^15.1.4",
     "react": "^19.0.0",

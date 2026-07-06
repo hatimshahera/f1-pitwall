@@ -1,4 +1,4 @@
-# @f1pitwall/replay-widget
+# @hatimshahera/f1-pitwall-replay-widget
 
 A reusable React/Canvas **F1 race-replay** widget. Point it at a replay JSON URL
 and it fetches, validates, and animates a race — track ribbon, moving driver
@@ -11,14 +11,14 @@ current with no changes on your side.
 ## Install
 
 ```bash
-npm install @f1pitwall/replay-widget react react-dom
+npm install @hatimshahera/f1-pitwall-replay-widget react react-dom
 ```
 
 ## Use
 
 ```tsx
-import { RaceReplayWidget } from '@f1pitwall/replay-widget';
-import '@f1pitwall/replay-widget/styles.css';
+import { RaceReplayWidget } from '@hatimshahera/f1-pitwall-replay-widget';
+import '@hatimshahera/f1-pitwall-replay-widget/styles.css';
 
 export function LatestRace() {
   return (

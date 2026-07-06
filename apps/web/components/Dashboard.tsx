@@ -9,7 +9,7 @@ import {
   TrackCanvas,
   useReplayData,
   useReplayEngine,
-} from '@f1pitwall/replay-widget';
+} from '@hatimshahera/f1-pitwall-replay-widget';
 import { RaceSelector } from './RaceSelector';
 import { NextRacePanel } from './NextRacePanel';
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { RaceReplayWidget } from '@f1pitwall/replay-widget';
+import { RaceReplayWidget } from '@hatimshahera/f1-pitwall-replay-widget';
 
 /**
  * Demonstrates the embeddable widget exactly as a personal site would use it:

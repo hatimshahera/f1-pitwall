@@ -32,12 +32,12 @@ importers:
 
   apps/web:
     dependencies:
-      '@f1pitwall/replay-widget':
-        specifier: workspace:*
-        version: link:../../packages/replay-widget
       '@f1pitwall/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@hatimshahera/f1-pitwall-replay-widget':
+        specifier: workspace:*
+        version: link:../../packages/replay-widget
       next:
         specifier: ^15.1.4
         version: 15.5.20(react-dom@19.2.7(react@19.2.7))(react@19.2.7)

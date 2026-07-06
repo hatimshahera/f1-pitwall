@@ -1,6 +1,6 @@
 /*
- * Default styling for @f1pitwall/replay-widget. Import once in your app:
- *   import '@f1pitwall/replay-widget/styles.css';
+ * Default styling for @hatimshahera/f1-pitwall-replay-widget. Import once in your app:
+ *   import '@hatimshahera/f1-pitwall-replay-widget/styles.css';
  *
  * The component classes (.f1pw-hud, .f1pw-leaderboard, .f1pw-controls, …) are
  * standalone so they can be composed individually (as the f1-pitwall dashboard
