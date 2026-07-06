@@ -115,56 +115,6 @@ def load_race_session(year: int, race: str | int, cache_dir: Path, session_code:
     return session
 
 
-def _centerline_arclength(
-    points: list[tuple[float, float]],
-) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
-    """Return centerline X, Y, cumulative arc-length, and total length."""
-    arr = np.asarray(points, dtype=float)
-    cx, cy = arr[:, 0], arr[:, 1]
-    seg = np.hypot(np.diff(cx, prepend=cx[:1]), np.diff(cy, prepend=cy[:1]))
-    cum = np.cumsum(seg)
-    return cx, cy, cum, float(cum[-1])
-
-
-def _race_progress(
-    xs: np.ndarray,
-    ys: np.ndarray,
-    laps: np.ndarray,
-    cx: np.ndarray,
-    cy: np.ndarray,
-    cum: np.ndarray,
-    track_len: float,
-) -> np.ndarray:
-    """Continuous race progress = ``official lap`` + within-lap fraction.
-
-    Each car position is projected onto the nearest centerline point (ignoring
-    pit-lane detours, unlike raw path length) to get a within-lap fraction in
-    [0, 1), which the live leaderboard uses to reorder every frame. Cross-lap
-    order comes from the **official lap number**, which is reliable — so a
-    mis-projection near the start/finish line (where the nearest point can snap to
-    the far end of the line) can only nudge same-lap ordering for a single frame,
-    never lock a car a whole lap ahead. Deliberately NO cumulative
-    ``maximum.accumulate`` here: that previously locked in such a bogus jump for
-    the rest of the race and scrambled the order.
-    """
-    dx = xs[:, None] - cx[None, :]
-    dy = ys[:, None] - cy[None, :]
-    nearest = np.argmin(dx * dx + dy * dy, axis=1)
-    fraction = cum[nearest] / track_len if track_len > 0 else np.zeros_like(cum[nearest])
-    progress = np.maximum(laps - 1, 0) + fraction
-    # A car exactly on the start/finish line can snap to the far end of the
-    # centerline, spiking its fraction to ~1 for a single frame. Median-filter it
-    # out so it neither blips the order nor (via the leader envelope) inflates gaps.
-    return _median3(progress)
-
-
-def _median3(a: np.ndarray) -> np.ndarray:
-    """3-point median filter — removes single-frame spikes, numpy-only."""
-    prev = np.concatenate([a[:1], a[:-1]])
-    nxt = np.concatenate([a[1:], a[-1:]])
-    return np.median(np.stack([prev, a, nxt]), axis=0)
-
-
 def _circuit_rotation_radians(session) -> float | None:
     """Per-circuit display rotation (radians) from FastF1, matching TV orientation."""
     try:
@@ -206,19 +156,19 @@ def build_replay_from_session(
     if laps is None or len(laps) == 0:
         raise FastF1Unavailable("Session has no lap data to build a replay from.")
 
-    # Collect each driver's position telemetry and a common t0/t_end.
+    # Collect each driver's telemetry (X/Y + RelativeDistance) and a common t0/t_end.
     driver_numbers = [str(d) for d in session.drivers]
     per_driver_pos: dict[str, pd.DataFrame] = {}
     t0 = None
     t_end = None
     for drv in driver_numbers:
         try:
-            pos = laps.pick_drivers(drv).get_pos_data()
+            pos = laps.pick_drivers(drv).get_telemetry()
         except Exception:
             continue
-        if pos is None or len(pos) == 0 or "X" not in pos:
+        if pos is None or len(pos) == 0 or "X" not in pos or "Distance" not in pos:
             continue
-        pos = pos.dropna(subset=["X", "Y"]).sort_values("SessionTime")
+        pos = pos.dropna(subset=["X", "Y", "Distance"]).sort_values("SessionTime")
         if len(pos) < 2:
             continue
         per_driver_pos[drv] = pos
@@ -259,7 +209,6 @@ def build_replay_from_session(
             any_pos["X"].to_numpy(dtype=float), any_pos["Y"].to_numpy(dtype=float), track_points
         )
     points = [(round(px, 1), round(py, 1)) for px, py in points]
-    cx, cy, cum, track_len = _centerline_arclength(points)
 
     cars: list[CarSamples] = []
     drivers_meta: list[ReplayDriver] = []
@@ -268,6 +217,12 @@ def build_replay_from_session(
         src_t = (pos["SessionTime"] - t0).dt.total_seconds().to_numpy()
         xs = resample(src_t, pos["X"].to_numpy(dtype=float), timeline)
         ys = resample(src_t, pos["Y"].to_numpy(dtype=float), timeline)
+
+        # Continuous on-track progress = FastF1's cumulative Distance (metres),
+        # which is monotonic and directly comparable across drivers — no centerline
+        # projection, no start/finish ambiguity. Ranking and gaps both use it, so
+        # the leaderboard reorders every frame.
+        progress = resample(src_t, pos["Distance"].to_numpy(dtype=float), timeline)
 
         # Lap number per frame (step function from lap start times).
         drv_laps = laps.pick_drivers(drv).sort_values("LapNumber")
@@ -280,10 +235,6 @@ def build_replay_from_session(
 
         compounds = drv_laps["Compound"].astype("string").fillna("UNKNOWN").to_numpy()
         compound_per_frame = [_normalise_compound(compounds[i]) for i in lap_idx]
-
-        # Continuous on-track progress (laps + along-centerline distance), so the
-        # leaderboard reorders every frame rather than once per lap.
-        progress = _race_progress(xs, ys, laps_arr, cx, cy, cum, track_len)
 
         # Retirement comes from the official classification, not the data length.
         retire_index = None
@@ -304,7 +255,14 @@ def build_replay_from_session(
         )
         drivers_meta.append(_driver_meta(drv, results))
 
-    tl, car_tracks = assemble_car_tracks(timeline, cars)
+    # Official finishing order pins the final leaderboard to the classified result.
+    try:
+        classified = results.dropna(subset=["Position"]).sort_values("Position")
+        final_order = [str(dn) for dn in classified["DriverNumber"]]
+    except Exception:
+        final_order = None
+
+    tl, car_tracks = assemble_car_tracks(timeline, cars, final_order=final_order)
 
     event_name = session.event["EventName"]
     meta = ReplayMeta(

@@ -12,7 +12,6 @@ import {
 } from '@f1pitwall/replay-widget';
 import { RaceSelector } from './RaceSelector';
 import { NextRacePanel } from './NextRacePanel';
-import { PredictionsPanel } from './PredictionsPanel';
 
 interface DashboardProps {
   season: SeasonIndex | null;
@@ -37,9 +36,9 @@ export function Dashboard({ season, nextRace, hasLatest }: DashboardProps): Reac
   const engine = useReplayEngine(state.data, { autoplay: false, initialSpeed: 1 });
 
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-4 lg:h-full lg:min-h-0 lg:grid-cols-[minmax(0,1fr)_300px]">
       {/* Replay stage */}
-      <section className="panel flex flex-col gap-3 p-4">
+      <section className="panel flex flex-col gap-3 p-4 lg:min-h-0">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h1 className="text-lg font-semibold">Race replay</h1>
           {season && season.races.some((r) => r.hasReplay) && (
@@ -60,7 +59,7 @@ export function Dashboard({ season, nextRace, hasLatest }: DashboardProps): Reac
         {state.status === 'ready' && state.data && (
           <>
             <ReplayHud replay={state.data} engine={engine} className="f1pw-hud" />
-            <div className="aspect-[16/10] w-full overflow-hidden rounded-xl bg-[color:var(--bg)]">
+            <div className="aspect-[16/10] w-full overflow-hidden rounded-xl bg-[color:var(--bg)] lg:aspect-auto lg:min-h-0 lg:flex-1">
               <TrackCanvas replay={state.data} engine={engine} showLabels />
             </div>
             <Controls engine={engine} className="f1pw-controls" />
@@ -69,17 +68,23 @@ export function Dashboard({ season, nextRace, hasLatest }: DashboardProps): Reac
       </section>
 
       {/* Side panels */}
-      <aside className="flex flex-col gap-4">
+      <aside className="flex flex-col gap-4 lg:min-h-0">
         {state.status === 'ready' && state.data && (
-          <section className="panel p-4">
+          <section className="panel flex flex-col p-4 lg:min-h-0 lg:flex-1">
             <h2 className="mb-2 text-xs uppercase tracking-wide text-[color:var(--muted)]">
               Leaderboard
             </h2>
-            <Leaderboard replay={state.data} engine={engine} className="f1pw-leaderboard" showGap />
+            <div className="lg:min-h-0 lg:flex-1 lg:overflow-auto">
+              <Leaderboard
+                replay={state.data}
+                engine={engine}
+                className="f1pw-leaderboard"
+                showGap
+              />
+            </div>
           </section>
         )}
         <NextRacePanel race={nextRace} />
-        <PredictionsPanel />
       </aside>
     </div>
   );
@@ -94,7 +99,7 @@ function StageMessage({
 }): React.JSX.Element {
   return (
     <div
-      className="flex min-h-[240px] items-center justify-center rounded-xl bg-[color:var(--bg)] p-6 text-center text-sm"
+      className="flex min-h-0 flex-1 items-center justify-center rounded-xl bg-[color:var(--bg)] p-6 text-center text-sm"
       style={{ color: variant === 'error' ? 'var(--accent)' : 'var(--muted)' }}
     >
       {children}

@@ -14,12 +14,12 @@ export default async function HomePage(): Promise<React.JSX.Element> {
   ]);
 
   return (
-    <>
+    <div className="flex min-h-[100dvh] flex-col lg:h-[100dvh] lg:overflow-hidden">
       <SiteHeader />
-      <main className="mx-auto max-w-6xl px-4 py-4">
+      <main className="mx-auto w-full min-h-0 max-w-6xl flex-1 px-4 pb-2">
         <Dashboard season={season} nextRace={nextRace} hasLatest={latest !== null} />
       </main>
       <SiteFooter />
-    </>
+    </div>
   );
 }

@@ -128,8 +128,9 @@ def _leader_gaps(timeline: np.ndarray, cars: list[CarSamples]) -> dict[str, np.n
     progress curves.
     """
     t_arr = np.asarray(timeline, dtype=float)
-    # The leading edge only ever moves forward; accumulate the per-frame max so the
-    # progress->time curve is strictly usable by np.interp (its xp must be sorted).
+    # The leading edge only moves forward; accumulate the per-frame max so the
+    # progress->time curve is monotonic for np.interp. Per-car progress is clean
+    # (cumulative Distance in metres), so this doesn't lock onto any spike.
     leader_progress = np.maximum.accumulate(np.vstack([c.progress for c in cars]).max(axis=0))
     gaps: dict[str, np.ndarray] = {}
     for car in cars:
@@ -138,17 +139,37 @@ def _leader_gaps(timeline: np.ndarray, cars: list[CarSamples]) -> dict[str, np.n
     return gaps
 
 
+def _apply_final_order(
+    cars: list[CarSamples], ranked: list[CarSamples], final_order: list[str]
+) -> list[CarSamples]:
+    """Reorder the final frame by official classification, then any others by rank."""
+    by_number = {c.driver_number: c for c in cars}
+    classified = [by_number[dn] for dn in final_order if dn in by_number]
+    seen = {c.driver_number for c in classified}
+    rest = [c for c in ranked if c.driver_number not in seen]
+    return classified + rest
+
+
 def assemble_car_tracks(
-    timeline: np.ndarray, cars: list[CarSamples]
+    timeline: np.ndarray,
+    cars: list[CarSamples],
+    *,
+    final_order: list[str] | None = None,
 ) -> tuple[Timeline, list[CarTrack]]:
     """Build the structure-of-arrays replay body from per-driver samples.
 
     For every frame, cars are ranked by :func:`_frame_sort_key` and renumbered to
     a gap-free ``1..N`` permutation. Each car's position/status/compound plus the
-    timing gaps (to the leader and to the car ahead) are written into parallel
-    per-frame arrays; status and compound are stored as run-length change-segments
-    to keep the payload small. Retired cars are ranked last and marked RETIRED;
-    the leader on the final frame is marked FINISHED.
+    timing gap to the leader are written into parallel per-frame arrays; status and
+    compound are stored as run-length change-segments to keep the payload small.
+    Retired cars are ranked last and marked RETIRED; the leader on the final frame
+    is marked FINISHED.
+
+    ``final_order`` (a list of driver numbers in official finishing order) pins the
+    LAST frame to the classified result. On-track distance is unreliable at a
+    trimmed finish (cars mid-lap, occasional telemetry gaps), so the closing
+    leaderboard uses the authoritative classification while the race itself keeps
+    the lively on-track order.
     """
     n = len(timeline)
     last_index = n - 1
@@ -165,6 +186,8 @@ def assemble_car_tracks(
                 car, fi, car.retire_index is not None and fi > car.retire_index
             ),
         )
+        if fi == last_index and final_order:
+            ranked = _apply_final_order(cars, ranked, final_order)
         for rank, car in enumerate(ranked, start=1):
             dn = car.driver_number
             positions[dn][fi] = rank
