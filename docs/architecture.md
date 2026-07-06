@@ -44,13 +44,17 @@ The core idea (adapted from — not copied out of — the reference desktop repl
 1. **Resample to a common clock.** Every car's position is linearly resampled
    onto one uniform time grid (`python/f1pitwall/replay/frames.py`). All cars
    share identical timestamps, so a frame is just "everyone at time `t`".
-2. **Ship plain frames.** The output is a list of `{ t, lap, cars[] }` — no
-   engine state, no code, just data.
+2. **Ship structure-of-arrays.** The output is a shared `timeline` plus one
+   per-driver `CarTrack` of parallel arrays (with run-length status/compound
+   segments) — no engine state, no code, just data, and compact enough for a full
+   real race (see [data-contract.md](./data-contract.md)).
 3. **Interpolate in the browser.** `useReplayEngine` runs a single
    `requestAnimationFrame` loop, advancing a float time in a ref (not React
    state, so 60 fps never triggers reconciliation). `TrackCanvas` and the clock
    _subscribe_ and redraw imperatively; between frames, car x/y is **lerped**
-   (`sampleReplay`) for smoothness the source data doesn't have.
+   (`sampleReplay`) for smoothness the source data doesn't have. The track is a
+   filled ribbon built from the racing line + per-circuit rotation
+   (`core/track.ts`, `core/geometry.ts`).
 
 ```
 useReplayData(url) ──► validate ──► Replay
@@ -81,7 +85,8 @@ the random-row split that leaks same-race laps between train and test.
 
 ## Extension hooks (deliberately not built yet)
 
-- **Live-ish mode.** Frames are already time-indexed; a live source would append
-  frames and the engine would follow the tail. No live code exists in Phase 1.
-- **Structure-of-arrays replay encoding** (`schemaVersion` 2.0) to ship real
-  full-race replays efficiently — see [data-contract.md](./data-contract.md).
+- **Live-ish mode.** The timeline is already time-indexed; a live source would
+  append frames/samples and the engine would follow the tail. No live code exists
+  yet.
+- **Timing gaps/intervals.** `gapToLeader` / `interval` are contract fields that
+  are `null` today; they slot into the SoA `CarTrack` without a schema break.

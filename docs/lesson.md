@@ -53,11 +53,19 @@ The one idea worth stealing from the desktop reference replay was
 
 1. Put every car on the same uniform time grid via linear resampling
    (`np.interp`). A "frame" becomes simply _everyone's state at time `t`_.
-2. Emit a list of `{ t, lap, cars[] }` — data only, no engine state.
+2. Emit the timeline once and one **array per field per driver** (a
+   structure-of-arrays layout — see the trade-offs section for why), plus sparse
+   change-segments for status/compound. Data only, no engine state.
 3. In the browser, run one rAF loop over a float time and **lerp** car positions
    between frames. The reference app snapped to the nearest frame; interpolating
    in JS means I can ship a low frame rate (small files) and still get smooth
    motion.
+
+The track itself is built the same way the reference does it: take one lap's real
+X/Y racing line as the centerline, offset it by `±width/2` along perpendicular
+normals to get inner/outer boundaries, and apply FastF1's per-circuit `rotation`.
+That offset math runs on the client, so the JSON only carries the centerline and a
+width — not two full boundary polylines.
 
 Keeping the authoritative playback time in a **ref with a subscription**, rather
 than React state, was the detail that mattered: the canvas redraws imperatively
@@ -93,28 +101,39 @@ evaluation (top-3 hit rate, rank correlation) and race-wise cross-validation.
 Phase 1 ships the structure and an honest stub; Phase 3 fills it in. Predictions
 are experimental and stay off the personal site.
 
-## Trade-offs and the one real mistake
+## Trade-offs and the real mistakes
 
-- **The JSON framing doesn't scale to full races.** Array-of-objects (repeating
-  every key per car per frame) is readable and matched the spec, but a 90-minute
-  race at 10 fps is tens of MB. I proved the real pipeline works end-to-end on the
-  2026 British GP, then made the pragmatic call: **commit the polished synthetic
-  sample as the default replay**, keep the _real_ schedule (season index +
-  next race) which is small and correct, and defer real full-race replays to a
-  **structure-of-arrays** encoding in Phase 2. Shipping a correct small thing beat
-  shipping a broken big thing.
-- **Per-frame position from raw geometry was wrong.** My first ordering used
-  cumulative XY distance as a progress proxy; it ranked backmarkers as leaders.
-  The fix was to use FastF1's official classified position and renumber to a clean
-  `1..N` permutation. Lesson: don't reconstruct a signal the source already gives
-  you authoritatively.
+- **The first JSON framing didn't scale to full races.** An array-of-objects
+  (repeating every key per car per frame) is readable and matched the initial spec,
+  but a 90-minute race at 10 fps is tens of MB. Phase 1 shipped a correct small
+  thing — the polished synthetic sample as the default — rather than a broken big
+  thing. Phase 2 fixed the root cause with a **structure-of-arrays** encoding
+  (schemaVersion 2.0): the timeline once, then per-driver typed arrays, with
+  run-length change-segments for status/compound. The real 2026 British GP went
+  from **8.4 MB to 2.9 MB** and is now the default replay. Lesson: pick the data
+  layout for the access pattern (dense per-frame reads), not for how it reads in a
+  code sample.
+- **Two bugs marked race winners "retired".** My first cut used telemetry length
+  as a retirement signal — but a winner's position data _ends when they cross the
+  line_, so finishers got flagged as retired and a backmarker floated to P1. And an
+  early ordering used cumulative XY distance as a progress proxy, which also ranked
+  backmarkers as leaders. Both fixes came from the same principle: **use the signal
+  the source already gives you authoritatively** — official classified position for
+  order, official results status for retirement — instead of reconstructing it from
+  geometry.
 - **Interpolation vs. accuracy.** Low frame rate + browser lerp cuts corners
   slightly. For a _replay_ (smoothness over simulation accuracy) that's the right
   trade; it's documented, not hidden.
+- **Rendering the track like the reference, not reinventing it.** I read how the
+  reference project builds its track (racing-line centerline offset by normals into
+  a ribbon, per-circuit rotation) and reimplemented that on the client, rather than
+  drawing a thin abstract line. Verifying it meant rendering the transform to a PNG
+  offline and recognising Silverstone — cheaper than round-tripping through a
+  browser.
 
 ## Future: live-ish mode
 
-Frames are already time-indexed, so a live source is an append problem, not a
-redesign: a generator would poll during a session and append frames, and the
-engine would follow the tail instead of stopping at the end. Phase 1 leaves the
-hook and builds none of it — post-race replay first.
+The timeline is already time-indexed, so a live source is an append problem, not a
+redesign: a generator would poll during a session and append frames/samples, and
+the engine would follow the tail instead of stopping at the end. The current
+version leaves the hook and builds none of it — post-race replay first.

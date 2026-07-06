@@ -5,8 +5,9 @@ public data.** A Python pipeline turns completed F1 sessions into a compact,
 web-friendly JSON contract; a Next.js dashboard (and a reusable React/Canvas
 widget) animate it — deployable free on Vercel with no always-on backend.
 
-> **Status:** Phase 1 — post-race replay + real 2026 schedule + experimental
-> prediction scaffold. See the [roadmap](#roadmap).
+> **Status:** post-race replay of the real 2026 season (structure-of-arrays
+> encoding), reusable widget, and an experimental prediction scaffold. See the
+> [roadmap](#roadmap).
 
 <!-- TODO: add screenshots/GIF of the dashboard and the compact widget here -->
 <!-- ![Dashboard](docs/screenshots/dashboard.png) -->
@@ -93,11 +94,11 @@ Output lands in `public-data/` and is picked up by the dashboard on the next
 `pnpm dev`/`build`. See **[docs/data-contract.md](docs/data-contract.md)** for the
 exact JSON shape.
 
-> **On real full-race replays:** the pipeline runs end-to-end on real 2026 data,
-> but the current JSON framing is too large for a full race at a good frame rate.
-> The committed default replay is therefore the synthetic sample (small, correct,
-> great-looking); the real 2026 **schedule** and **next race** _are_ live data. A
-> structure-of-arrays encoding for real full-race replays is Phase 2. Details in
+> **On the data:** the default replay is the **real 2026 British Grand Prix**
+> (real Silverstone outline, correct finishing order), encoded with the
+> structure-of-arrays format so a full race is ~3 MB. A polished **synthetic**
+> sample is also included (and used by tests / offline `--demo`). The real 2026
+> **schedule** and **next race** are live FastF1 data. Details in
 > [docs/lesson.md](docs/lesson.md).
 
 ## Consuming the data from another site
@@ -155,12 +156,14 @@ Data comes from public/unofficial sources and may be incomplete or delayed.
 
 ## Roadmap
 
-- **Phase 1 (this repo)** — monorepo, dashboard, reusable widget, replay pipeline,
-  real 2026 schedule, synthetic sample replay, docs. ✅
-- **Phase 2** — structure-of-arrays replay encoding for efficient real full-race
-  replays; timing gaps/intervals; richer per-season data.
+- **Phase 1** — monorepo, dashboard, reusable widget, replay pipeline, real 2026
+  schedule, synthetic sample replay, docs. ✅
+- **Phase 2** — structure-of-arrays replay encoding (schemaVersion 2.0), real
+  full-race replays (2026 British GP as default), track ribbon + per-circuit
+  rotation, correct results-based ordering/retirement. ✅
 - **Phase 3** — experimental podium prediction pipeline + dashboard section.
-- **Phase 4** — scheduled data-refresh GitHub Action; polish; live-ish mode.
+- **Phase 4** — timing gaps/intervals; scheduled data-refresh Action; polish;
+  live-ish mode.
 
 ## License
 
