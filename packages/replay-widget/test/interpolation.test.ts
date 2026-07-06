@@ -31,8 +31,8 @@ function twoFrameReplay(): Replay {
         x: [0, 100],
         y: [0, 200],
         position: [1, 1],
-        gapToLeader: [0, 0],
-        interval: [null, null],
+        gapToLeader: [0, 5.5],
+        interval: null,
         statusSegments: [[0, 'RUNNING']],
         compoundSegments: [
           [0, 'MEDIUM'],
@@ -70,11 +70,17 @@ describe('sampleReplay', () => {
     expect(frame.cars[0]!.y).toBeCloseTo(100, 5);
   });
 
-  it('takes discrete fields (lap, raceTime, compound) from the floor frame', () => {
+  it('takes discrete fields (lap, raceTime, compound, gap) from the floor frame', () => {
     const frame = sampleReplay(twoFrameReplay(), 5);
     expect(frame.lap).toBe(1);
     expect(frame.raceTime).toBe('00:00');
     expect(frame.cars[0]!.compound).toBe('MEDIUM');
+    expect(frame.cars[0]!.gapToLeader).toBe(0); // floor frame value, not interpolated
+  });
+
+  it('returns null interval when the array is absent (derived on the client)', () => {
+    const frame = sampleReplay(twoFrameReplay(), 5);
+    expect(frame.cars[0]!.interval).toBeNull();
   });
 
   it('resolves change-segments (compound switches at frame 1)', () => {

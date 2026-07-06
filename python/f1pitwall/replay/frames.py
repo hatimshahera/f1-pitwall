@@ -118,22 +118,43 @@ def _rle_segments(values: list) -> list[tuple[int, object]]:
     return segments
 
 
+def _leader_gaps(timeline: np.ndarray, cars: list[CarSamples]) -> dict[str, np.ndarray]:
+    """Time gap (seconds) to the race leader per car per frame.
+
+    The "leading edge" of the race is the per-frame max progress across all cars;
+    inverting its (monotonic) progress→time curve tells us when the leader reached
+    any track position. A follower's gap is then ``now − leader_time(its
+    progress)`` — the standard time-gap definition, computed from the replay's own
+    progress curves.
+    """
+    t_arr = np.asarray(timeline, dtype=float)
+    leader_progress = np.vstack([c.progress for c in cars]).max(axis=0)
+    gaps: dict[str, np.ndarray] = {}
+    for car in cars:
+        lead_time = np.interp(car.progress, leader_progress, t_arr)
+        gaps[car.driver_number] = np.clip(t_arr - lead_time, 0.0, None)
+    return gaps
+
+
 def assemble_car_tracks(
     timeline: np.ndarray, cars: list[CarSamples]
 ) -> tuple[Timeline, list[CarTrack]]:
     """Build the structure-of-arrays replay body from per-driver samples.
 
     For every frame, cars are ranked by :func:`_frame_sort_key` and renumbered to
-    a gap-free ``1..N`` permutation. Each car's position/status/compound are then
-    written into parallel per-frame arrays; status and compound are stored as
-    run-length change-segments to keep the payload small. Retired cars are ranked
-    last and marked RETIRED; the leader on the final frame is marked FINISHED.
+    a gap-free ``1..N`` permutation. Each car's position/status/compound plus the
+    timing gaps (to the leader and to the car ahead) are written into parallel
+    per-frame arrays; status and compound are stored as run-length change-segments
+    to keep the payload small. Retired cars are ranked last and marked RETIRED;
+    the leader on the final frame is marked FINISHED.
     """
     n = len(timeline)
     last_index = n - 1
 
     positions: dict[str, list[int]] = {c.driver_number: [0] * n for c in cars}
     statuses: dict[str, list[CarStatus]] = {c.driver_number: ["RUNNING"] * n for c in cars}
+    gap_to_leader: dict[str, list[float | None]] = {c.driver_number: [None] * n for c in cars}
+    leader_gaps = _leader_gaps(timeline, cars)
 
     for fi in range(n):
         ranked = sorted(
@@ -143,15 +164,18 @@ def assemble_car_tracks(
             ),
         )
         for rank, car in enumerate(ranked, start=1):
-            positions[car.driver_number][fi] = rank
-            retired = car.retire_index is not None and fi > car.retire_index
-            if retired:
-                statuses[car.driver_number][fi] = "RETIRED"
-            elif fi == last_index and rank == 1:
-                statuses[car.driver_number][fi] = "FINISHED"
+            dn = car.driver_number
+            positions[dn][fi] = rank
+            if car.retire_index is not None and fi > car.retire_index:
+                statuses[dn][fi] = "RETIRED"
+                continue
+            if fi == last_index and rank == 1:
+                statuses[dn][fi] = "FINISHED"
+            gap_to_leader[dn][fi] = 0.0 if rank == 1 else round(float(leader_gaps[dn][fi]), 1)
 
     car_tracks: list[CarTrack] = []
     for car in cars:
+        dn = car.driver_number
         # Retired cars hold their last-known position for the remaining frames.
         xs = car.xs.copy()
         ys = car.ys.copy()
@@ -161,11 +185,15 @@ def assemble_car_tracks(
 
         car_tracks.append(
             CarTrack(
-                driver_number=car.driver_number,
+                driver_number=dn,
                 x=[round(float(v), 1) for v in xs],
                 y=[round(float(v), 1) for v in ys],
-                position=positions[car.driver_number],
-                status_segments=_rle_segments(statuses[car.driver_number]),  # type: ignore[arg-type]
+                position=positions[dn],
+                gap_to_leader=gap_to_leader[dn],
+                # `interval` (gap to car ahead) is derived on the client from
+                # gap_to_leader + running order, so it isn't stored.
+                interval=None,
+                status_segments=_rle_segments(statuses[dn]),  # type: ignore[arg-type]
                 compound_segments=_rle_segments(car.compounds),  # type: ignore[arg-type]
             )
         )

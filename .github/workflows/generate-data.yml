@@ -1,11 +1,12 @@
-# Manual data-refresh workflow.
+# Data-refresh workflow.
 #
-# Phase 1: manual trigger only (workflow_dispatch). It regenerates the season
-# index / next race (real FastF1) and refreshes the synthetic sample replay,
-# then commits public-data/ back to the repo if anything changed.
+# Regenerates the real season index / next race, the synthetic sample, and the
+# real latest-race replay, then commits public-data/ back to the repo.
 #
-# A scheduled trigger is intentionally left commented out until real full-race
-# replays are shipped (Phase 2). To enable weekly refresh, uncomment `schedule`.
+# Triggers: manual (workflow_dispatch) any time, plus a weekly schedule the
+# morning after a typical race Sunday. A run always updates `generatedAt`, so it
+# commits weekly even when there's no new race — that's an intentional "heartbeat"
+# for a data project; comment out `schedule` if you prefer manual-only.
 
 name: Generate data
 
@@ -16,11 +17,15 @@ on:
         description: "Season year"
         required: true
         default: "2026"
-  # schedule:
-  #   - cron: "0 6 * * MON"   # Mondays 06:00 UTC (day after most races)
+  schedule:
+    - cron: "0 8 * * MON" # Mondays 08:00 UTC
 
 permissions:
   contents: write
+
+concurrency:
+  group: generate-data
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -35,16 +40,19 @@ jobs:
       - name: Install package with data extra
         run: pip install -e '.[data]'
 
-      - name: Generate season index + next race (real FastF1)
-        run: python -m f1pitwall generate-season-index --year "${{ inputs.year }}"
+      - name: Resolve season year
+        id: year
+        run: echo "value=${{ inputs.year || '2026' }}" >> "$GITHUB_OUTPUT"
 
-      - name: Refresh synthetic sample replay
-        run: python -m f1pitwall generate-replay --demo --year "${{ inputs.year }}"
+      - name: Season index + next race (real FastF1)
+        run: python -m f1pitwall generate-season-index --year "${{ steps.year.outputs.value }}"
 
-      # Real full-race replay generation is available but not committed by default
-      # (see docs/lesson.md). Uncomment to attempt it:
-      # - name: Generate latest race replay
-      #   run: python -m f1pitwall generate-replay --year "${{ inputs.year }}" --race latest
+      - name: Synthetic sample replay (offline demo race)
+        run: python -m f1pitwall generate-replay --demo --year "${{ steps.year.outputs.value }}"
+
+      - name: Latest real race replay (becomes latest-replay.json)
+        continue-on-error: true # a mid-season gap or data hiccup shouldn't fail the run
+        run: python -m f1pitwall generate-replay --year "${{ steps.year.outputs.value }}" --race latest
 
       - name: Commit updated data
         run: |

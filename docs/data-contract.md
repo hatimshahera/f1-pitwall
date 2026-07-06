@@ -105,7 +105,11 @@ rather than mis-rendering.
 
 Fields the source can't provide are `null`, never fabricated:
 
-- `gapToLeader` / `interval` — `null` in 2.0 (timing gaps are a later item).
+- `gapToLeader` — seconds behind the on-track leader, computed from the leading
+  edge of the field (max progress) inverted to time; `0` for the leader, `null`
+  once a car has retired.
+- `interval` — gap to the car ahead. Left `null` in the payload; it can be
+  derived on the client from `gapToLeader` + running order, so it isn't stored.
 - a `compound` segment value may be `null` when tyre data is missing.
 - `track.rotation` — `null`/absent means no rotation.
 

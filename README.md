@@ -133,14 +133,21 @@ import '@f1pitwall/replay-widget/styles.css';
 
 ## Deployment (Vercel)
 
-1. Import the repo into Vercel.
-2. **Root Directory:** `apps/web`.
-3. Framework preset **Next.js** (build/install commands are auto-detected; the
-   monorepo install runs from the repo root, and `vercel.json` sets the pnpm build).
-4. No environment variables are required for Phase 1.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/hatimshahera/f1-pitwall&project-name=f1-pitwall&repository-name=f1-pitwall&root-directory=apps/web)
 
-The generated JSON is committed, so a deploy needs no Python. To refresh data,
-run the pipeline locally (or via the GitHub Action) and commit `public-data/`.
+Or manually:
+
+1. Import the repo into Vercel.
+2. Set **Root Directory** to `apps/web` (Vercel still checks out the whole repo,
+   so the build can read the top-level `public-data/`).
+3. Framework preset **Next.js**. `apps/web/vercel.json` pins the pnpm
+   install/build; the workspace install runs from the monorepo root automatically.
+4. No environment variables are required.
+
+The generated JSON is committed, so a deploy needs **no Python** — the build's
+`copy-data` step copies `public-data/` into the app's static output. To refresh
+the data, run the pipeline locally or trigger the **Generate data** GitHub Action,
+which commits `public-data/` back (the next deploy picks it up).
 
 ## Scripts
 
@@ -167,8 +174,9 @@ Data comes from public/unofficial sources and may be incomplete or delayed.
   rotation, correct results-based ordering/retirement. ✅
 - **Phase 3** — experimental podium predictions: notebook workspace + data/export
   scaffolding wired to the dashboard's predictions panel (modelling is a WIP). 🚧
-- **Phase 4** — timing gaps/intervals; scheduled data-refresh Action; polish;
-  live-ish mode.
+- **Phase 4** — timing gaps to the leader in the replay/leaderboard; weekly
+  data-refresh GitHub Action; Vercel deploy button. ✅
+- **Later** — live-ish mode (the timeline is already an append-friendly stream).
 
 ## License
 

@@ -13,11 +13,11 @@ export function formatClock(totalSeconds: number): string {
   return `${pad2(minutes)}:${pad2(seconds)}`;
 }
 
-/** Format an interval/gap in seconds as `+1.234s`, or an em dash when null. */
+/** Format an interval/gap in seconds as `+1.2s`, or an em dash when null. */
 export function formatGap(seconds: number | null): string {
   if (seconds === null || Number.isNaN(seconds)) return '—';
   if (seconds === 0) return 'Leader';
-  return `+${seconds.toFixed(3)}s`;
+  return `+${seconds.toFixed(1)}s`;
 }
 
 /** Format a future race date for the "next race" card. */
