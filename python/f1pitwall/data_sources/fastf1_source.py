@@ -115,12 +115,42 @@ def load_race_session(year: int, race: str | int, cache_dir: Path, session_code:
     return session
 
 
-def _driver_progress(pos) -> np.ndarray:
-    """Cumulative along-path distance (monotonic) for ranking, from X/Y."""
-    x = pos["X"].to_numpy(dtype=float)
-    y = pos["Y"].to_numpy(dtype=float)
-    seg = np.hypot(np.diff(x, prepend=x[:1]), np.diff(y, prepend=y[:1]))
-    return np.cumsum(seg)
+def _centerline_arclength(
+    points: list[tuple[float, float]],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+    """Return centerline X, Y, cumulative arc-length, and total length."""
+    arr = np.asarray(points, dtype=float)
+    cx, cy = arr[:, 0], arr[:, 1]
+    seg = np.hypot(np.diff(cx, prepend=cx[:1]), np.diff(cy, prepend=cy[:1]))
+    cum = np.cumsum(seg)
+    return cx, cy, cum, float(cum[-1])
+
+
+def _race_progress(
+    xs: np.ndarray,
+    ys: np.ndarray,
+    laps: np.ndarray,
+    cx: np.ndarray,
+    cy: np.ndarray,
+    cum: np.ndarray,
+    track_len: float,
+) -> np.ndarray:
+    """Continuous race progress = completed laps + along-centerline distance.
+
+    Each car position is projected onto the nearest centerline point (ignoring
+    pit-lane detours, unlike raw path length), giving an along-track distance that
+    updates every frame. Anchoring by official lap number keeps lapped cars
+    correctly behind. This is what the live leaderboard is ranked by, so it
+    reorders continuously instead of once per lap.
+    """
+    # Nearest centerline index per frame (vectorised, per car).
+    dx = xs[:, None] - cx[None, :]
+    dy = ys[:, None] - cy[None, :]
+    nearest = np.argmin(dx * dx + dy * dy, axis=1)
+    arclen = cum[nearest]
+    progress = np.maximum(laps - 1, 0) * track_len + arclen
+    # Enforce monotonicity so a start/finish-line wrap never dips the position.
+    return np.maximum.accumulate(progress)
 
 
 def _circuit_rotation_radians(session) -> float | None:
@@ -217,6 +247,7 @@ def build_replay_from_session(
             any_pos["X"].to_numpy(dtype=float), any_pos["Y"].to_numpy(dtype=float), track_points
         )
     points = [(round(px, 1), round(py, 1)) for px, py in points]
+    cx, cy, cum, track_len = _centerline_arclength(points)
 
     cars: list[CarSamples] = []
     drivers_meta: list[ReplayDriver] = []
@@ -225,7 +256,6 @@ def build_replay_from_session(
         src_t = (pos["SessionTime"] - t0).dt.total_seconds().to_numpy()
         xs = resample(src_t, pos["X"].to_numpy(dtype=float), timeline)
         ys = resample(src_t, pos["Y"].to_numpy(dtype=float), timeline)
-        progress = resample(src_t, _driver_progress(pos), timeline)
 
         # Lap number per frame (step function from lap start times).
         drv_laps = laps.pick_drivers(drv).sort_values("LapNumber")
@@ -239,12 +269,9 @@ def build_replay_from_session(
         compounds = drv_laps["Compound"].astype("string").fillna("UNKNOWN").to_numpy()
         compound_per_frame = [_normalise_compound(compounds[i]) for i in lap_idx]
 
-        # Official classified position per frame (stepped by lap, forward-filled).
-        positions_arr = None
-        if "Position" in drv_laps:
-            pos_series = drv_laps["Position"].ffill().bfill()
-            if pos_series.notna().any():
-                positions_arr = pos_series.fillna(99).to_numpy(dtype=float)[lap_idx]
+        # Continuous on-track progress (laps + along-centerline distance), so the
+        # leaderboard reorders every frame rather than once per lap.
+        progress = _race_progress(xs, ys, laps_arr, cx, cy, cum, track_len)
 
         # Retirement comes from the official classification, not the data length.
         retire_index = None
@@ -259,7 +286,7 @@ def build_replay_from_session(
                 progress=progress,
                 laps=laps_arr,
                 compounds=compound_per_frame,
-                positions=positions_arr,
+                positions=None,
                 retire_index=retire_index,
             )
         )

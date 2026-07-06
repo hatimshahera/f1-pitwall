@@ -109,10 +109,13 @@ Fields the source can't provide are `null`, never fabricated:
 - a `compound` segment value may be `null` when tyre data is missing.
 - `track.rotation` — `null`/absent means no rotation.
 
-Positions are always a clean `1..N` permutation per frame: cars are ordered by
-official classified position (real data) or along-track progress (synthetic),
-then renumbered. Retirement comes from the official results **status** (not from
-telemetry length), so race finishers are never mis-flagged as retired.
+Positions are always a clean `1..N` permutation per frame. Cars are ordered by
+**continuous on-track progress** — completed laps plus distance along the racing
+line (each car projected onto the centerline, which ignores pit-lane detours) —
+so the live leaderboard reorders every frame, and the final order still matches
+the official classification. Retirement comes from the official results
+**status** (not from telemetry length), so race finishers are never mis-flagged
+as retired.
 
 ### Coordinates & the track ribbon
 
