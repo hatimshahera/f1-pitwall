@@ -87,6 +87,21 @@ python -m f1pitwall generate-replay --year 2026 --race "British Grand Prix"
 python -m f1pitwall generate-season-index --year 2026     # season index + next race
 ```
 
+### Publishing the widget to npm
+
+`@f1pitwall/replay-widget` is set up to publish as a self-contained package
+(bundles `@f1pitwall/shared` + zod; React stays a peer). From the repo root:
+
+```bash
+npm login                                                  # once
+# the @f1pitwall scope needs a (free) npm org of that name, or rename the package
+pnpm --filter @f1pitwall/replay-widget publish --access public
+```
+
+`prepublishOnly` builds `dist/` (JS + types + `styles.css`) automatically. In-repo,
+the dashboard keeps consuming the TypeScript source — `publishConfig` only swaps
+the entry points to `dist/` at publish time.
+
 **Experimental podium predictions** are developed interactively in a notebook, not
 via the CLI. `pip install -e '.[predictions]'`, then open
 `notebooks/podium_predictions.ipynb`: the project provides the data loader and the

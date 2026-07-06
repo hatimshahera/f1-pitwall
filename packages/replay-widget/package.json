@@ -1,10 +1,10 @@
 {
   "name": "@f1pitwall/replay-widget",
   "version": "0.1.0",
-  "private": true,
   "description": "Reusable React/Canvas F1 race-replay engine and widget.",
   "license": "MIT",
   "type": "module",
+  "//": "Default exports point at source for in-repo consumption (transpilePackages). publishConfig swaps them to the built dist at publish time.",
   "exports": {
     ".": {
       "types": "./src/index.ts",
@@ -17,20 +17,34 @@
   "sideEffects": [
     "*.css"
   ],
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsup src/index.ts --format esm --dts --clean --external react",
+    "build": "tsup src/index.ts --format esm --dts --clean --external react --external react-dom && cp src/styles.css dist/styles.css",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "pnpm build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      },
+      "./styles.css": "./dist/styles.css"
+    }
   },
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
   },
-  "dependencies": {
-    "@f1pitwall/shared": "workspace:*"
-  },
   "devDependencies": {
+    "@f1pitwall/shared": "workspace:*",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "react": "^19.0.0",

@@ -71,11 +71,10 @@ importers:
         version: 5.9.3
 
   packages/replay-widget:
-    dependencies:
+    devDependencies:
       '@f1pitwall/shared':
         specifier: workspace:*
         version: link:../shared
-    devDependencies:
       '@types/react':
         specifier: ^19.0.2
         version: 19.2.17
