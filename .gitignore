@@ -28,6 +28,9 @@ venv/
 .fastf1-cache/
 python/.fastf1-cache/
 
+# Jupyter
+.ipynb_checkpoints/
+
 # Env / secrets
 .env
 .env.local

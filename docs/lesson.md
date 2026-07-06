@@ -91,15 +91,18 @@ It fetches a public JSON URL, validates it against the shared schema, and
 animates — no shared runtime, no build coupling. Same engine as the dashboard,
 just a smaller wrapper.
 
-## How the prediction pipeline is structured
+## How predictions are structured
 
 Deliberately **not** one script per race (the trap the reference predictions repo
 fell into — copy-pasted, hardcoded, evaluated on a random split that leaks laps).
-Instead it's laid out as a reusable pipeline —
-`load → features → train → evaluate → predict → export` — with rank-aware
-evaluation (top-3 hit rate, rank correlation) and race-wise cross-validation.
-Phase 1 ships the structure and an honest stub; Phase 3 fills it in. Predictions
-are experimental and stay off the personal site.
+Prediction is also inherently exploratory, so it lives in a **notebook**
+(`notebooks/podium_predictions.ipynb`) rather than a CLI command. The project
+supplies only the boring, reusable parts — a FastF1 results loader and a
+contract-validated JSON exporter (`f1pitwall.predictions`) — and the notebook holds
+the modelling, with the pitfalls called out up front (no leakage; race-wise
+cross-validation; rank-aware metrics like top-3 hit rate; beat a
+championship-standings baseline or admit you didn't). Predictions are experimental
+and stay off the personal-site widget.
 
 ## Trade-offs and the real mistakes
 

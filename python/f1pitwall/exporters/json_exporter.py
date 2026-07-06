@@ -9,11 +9,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from f1pitwall.models import NextRace, Replay, SeasonIndex, SeasonRace
+from f1pitwall.models import NextRace, Predictions, Replay, SeasonIndex, SeasonRace
 from f1pitwall.util import slugify
 
 
-def _dump(model: Replay | SeasonIndex | NextRace, *, compact: bool = False) -> str:
+def _dump(model: Replay | SeasonIndex | NextRace | Predictions, *, compact: bool = False) -> str:
     """Serialize a model to JSON.
 
     Replays are large frame arrays, so they're written compactly (no indent);
@@ -53,6 +53,13 @@ def write_season_index(index: SeasonIndex, public_data_dir: Path) -> Path:
 def write_next_race(next_race: NextRace, public_data_dir: Path) -> Path:
     path = public_data_dir / "next-race.json"
     _write(path, _dump(next_race))
+    return path
+
+
+def write_predictions(predictions: Predictions, public_data_dir: Path) -> Path:
+    """Write experimental podium predictions to predictions/next.json."""
+    path = public_data_dir / "predictions" / "next.json"
+    _write(path, _dump(predictions))
     return path
 
 

@@ -21,10 +21,14 @@ data = [
   "fastf1>=3.3",
   "pandas>=2.1",
 ]
-# Experimental prediction pipeline (Phase 3).
+# Experimental prediction work — you model in notebooks/podium_predictions.ipynb.
 predictions = [
-  "scikit-learn>=1.4",
+  "fastf1>=3.3",
   "pandas>=2.1",
+  "scikit-learn>=1.4",
+  "jupyterlab>=4.0",
+  "ipykernel>=6.29",
+  "matplotlib>=3.8",
 ]
 dev = [
   "pytest>=8.0",

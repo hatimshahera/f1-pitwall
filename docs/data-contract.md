@@ -175,17 +175,20 @@ The dashboard's race selector lists only entries with `hasReplay: true`.
 }
 ```
 
-## Predictions (experimental, Phase 3)
+## Predictions (experimental)
+
+Generated from `notebooks/podium_predictions.ipynb` via
+`f1pitwall.predictions.export`, not the CLI.
 
 ```jsonc
 {
   "meta": {
-    "schemaVersion": "1.0",
+    "schemaVersion": "2.0",
     "year": 2026,
     "raceName": "Belgian Grand Prix",
     "round": 10,
     "session": "R",
-    "model": "gradient-boosting",
+    "model": "your-model-name",
     "generatedAt": "…",
     "experimental": true,
     "disclaimer": "…",

@@ -6,7 +6,9 @@ Examples
     python -m f1pitwall generate-replay --year 2026 --race "British Grand Prix"
     python -m f1pitwall generate-replay --demo            # synthetic sample, no network
     python -m f1pitwall generate-season-index --year 2026
-    python -m f1pitwall predict-podium --year 2026 --race next
+
+Podium predictions are experimental and developed in
+``notebooks/podium_predictions.ipynb`` (not a CLI command).
 """
 
 from __future__ import annotations
@@ -111,21 +113,6 @@ def generate_season_index(
     if schedule.next_race is not None:
         write_next_race(schedule.next_race, config.public_data_dir)
         typer.echo(f"Wrote next race: {schedule.next_race.race_name}")
-
-
-@app.command("predict-podium")
-def predict_podium_cmd(
-    year: int = typer.Option(2026, help="Season year."),
-    race: str = typer.Option("next", help="Round number, race name, or 'next'."),
-) -> None:
-    """(Experimental, Phase 3) Predict the podium for a race."""
-    from f1pitwall.predictions import PredictionNotReady, predict_podium
-
-    try:
-        predict_podium(year, race)
-    except PredictionNotReady as exc:
-        typer.secho(str(exc), fg=typer.colors.YELLOW)
-        raise typer.Exit(code=2) from exc
 
 
 def _existing_replay_slugs(config: Config) -> set[str]:

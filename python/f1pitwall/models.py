@@ -117,3 +117,29 @@ class NextRace(_Model):
     date: str | None = None
     sessions: list[RaceSession] = Field(default_factory=list)
     generated_at: str
+
+
+class PredictedDriver(_Model):
+    driver_number: str
+    code: str
+    name: str
+    team: str
+    predicted_rank: int
+    podium_probability: float
+
+
+class PredictionsMeta(_Model):
+    schema_version: str
+    year: int
+    race_name: str
+    round: int
+    session: SessionCode
+    model: str
+    generated_at: str
+    experimental: Literal[True] = True
+    disclaimer: str
+
+
+class Predictions(_Model):
+    meta: PredictionsMeta
+    drivers: list[PredictedDriver]

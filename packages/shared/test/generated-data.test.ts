@@ -2,7 +2,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { validateNextRace, validateReplay, validateSeasonIndex } from '../src/index';
+import {
+  validateNextRace,
+  validatePredictions,
+  validateReplay,
+  validateSeasonIndex,
+} from '../src/index';
 
 /**
  * Cross-language contract check: the JSON emitted by the Python pipeline must
@@ -37,6 +42,13 @@ describe('generated public-data validates against the shared contract', () => {
     const json = readJson('next-race.json');
     if (json === null) return;
     const result = validateNextRace(json);
+    expect(result.ok, result.ok ? '' : result.errors.join('\n')).toBe(true);
+  });
+
+  it('predictions/next.json (if present) is valid', () => {
+    const json = readJson('predictions/next.json');
+    if (json === null) return; // generated from the notebook, optional
+    const result = validatePredictions(json);
     expect(result.ok, result.ok ? '' : result.errors.join('\n')).toBe(true);
   });
 });

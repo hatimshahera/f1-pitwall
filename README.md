@@ -85,10 +85,14 @@ python -m f1pitwall generate-replay --demo
 python -m f1pitwall generate-replay --year 2026 --race latest
 python -m f1pitwall generate-replay --year 2026 --race "British Grand Prix"
 python -m f1pitwall generate-season-index --year 2026     # season index + next race
-
-# Experimental (Phase 3, currently a documented stub)
-python -m f1pitwall predict-podium --year 2026 --race next
 ```
+
+**Experimental podium predictions** are developed interactively in a notebook, not
+via the CLI. `pip install -e '.[predictions]'`, then open
+`notebooks/podium_predictions.ipynb`: the project provides the data loader and the
+JSON-export plumbing (`f1pitwall.predictions`), and you build the features/model.
+Exporting writes `public-data/predictions/next.json`, which the dashboard's
+"Experimental Predictions" panel renders.
 
 Output lands in `public-data/` and is picked up by the dashboard on the next
 `pnpm dev`/`build`. See **[docs/data-contract.md](docs/data-contract.md)** for the
@@ -161,7 +165,8 @@ Data comes from public/unofficial sources and may be incomplete or delayed.
 - **Phase 2** — structure-of-arrays replay encoding (schemaVersion 2.0), real
   full-race replays (2026 British GP as default), track ribbon + per-circuit
   rotation, correct results-based ordering/retirement. ✅
-- **Phase 3** — experimental podium prediction pipeline + dashboard section.
+- **Phase 3** — experimental podium predictions: notebook workspace + data/export
+  scaffolding wired to the dashboard's predictions panel (modelling is a WIP). 🚧
 - **Phase 4** — timing gaps/intervals; scheduled data-refresh Action; polish;
   live-ish mode.
 

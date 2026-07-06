@@ -35,8 +35,8 @@ export function PredictionsPanel(): React.JSX.Element {
 
       {!predictions ? (
         <p className="mt-2 text-sm text-[color:var(--muted)]">
-          Podium predictions are not published yet. The prediction pipeline is under active
-          development (Phase 3).
+          No podium predictions published yet. These come from an experimental, notebook-driven
+          model (<code>notebooks/podium_predictions.ipynb</code>) and appear here once exported.
         </p>
       ) : (
         <ol className="mt-3 space-y-1">

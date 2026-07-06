@@ -1,14 +1,22 @@
-"""Experimental podium-prediction pipeline (Phase 3).
+"""Experimental podium-prediction scaffolding.
 
-The module layout intentionally mirrors a real ML pipeline so Phase 3 slots in
-without a rewrite:
+The **modelling** is intentionally left to you, in
+``notebooks/podium_predictions.ipynb``. This package only provides the plumbing
+around it:
 
-    load      -> feature_engineering -> train -> evaluate -> predict -> export
-
-For Phase 1 only the interfaces and a documented NotImplemented stub exist, so
-the CLI command is present and honest about being unimplemented.
+- :func:`data.load_results` — FastF1 race results as a tidy DataFrame.
+- :func:`data.latest_driver_lineup` — entry list for the next race.
+- :func:`export.build_predictions` / :func:`export.export_predictions` — turn your
+  model's podium probabilities into the validated ``predictions/next.json`` that
+  the dashboard renders.
 """
 
-from f1pitwall.predictions.pipeline import PredictionNotReady, predict_podium
+from f1pitwall.predictions.data import latest_driver_lineup, load_results
+from f1pitwall.predictions.export import build_predictions, export_predictions
 
-__all__ = ["predict_podium", "PredictionNotReady"]
+__all__ = [
+    "load_results",
+    "latest_driver_lineup",
+    "build_predictions",
+    "export_predictions",
+]

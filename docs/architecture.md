@@ -75,13 +75,21 @@ rate.
 - `next.config.mjs` attaches permissive CORS to `/data/*` and traces
   `public/data/**` into the serverless functions that back `/api/*`.
 
-## Prediction pipeline (Phase 3)
+## Predictions (experimental, notebook-driven)
 
-`python/f1pitwall/predictions/` is laid out as a real ML pipeline —
-`load → feature_engineering → train → evaluate → predict → export` — with a
-documented stub today. Evaluation is designed to use **rank-aware metrics**
-(top-3 hit rate, rank correlation) with **race-wise** cross-validation, avoiding
-the random-row split that leaks same-race laps between train and test.
+Podium prediction is intentionally **interactive**, not an automated CLI step.
+`python/f1pitwall/predictions/` provides only the plumbing:
+
+- `data.load_results(years, cache_dir)` — FastF1 results as a tidy DataFrame.
+- `export.build_predictions(...)` / `export_predictions(...)` — validate a model's
+  podium probabilities against the shared contract and write
+  `public-data/predictions/next.json`.
+
+The modelling — feature engineering, training, evaluation — lives in
+`notebooks/podium_predictions.ipynb`, which flags the pitfalls to respect
+(no leakage; race-wise cross-validation; rank-aware metrics like top-3 hit rate).
+The dashboard's "Experimental Predictions" panel renders `next.json` when present,
+and an honest empty state otherwise.
 
 ## Extension hooks (deliberately not built yet)
 

@@ -2,8 +2,9 @@
 
 from f1pitwall.exporters.json_exporter import (
     write_next_race,
+    write_predictions,
     write_replay,
     write_season_index,
 )
 
-__all__ = ["write_replay", "write_season_index", "write_next_race"]
+__all__ = ["write_replay", "write_season_index", "write_next_race", "write_predictions"]
