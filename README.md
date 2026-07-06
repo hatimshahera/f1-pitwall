@@ -169,3 +169,9 @@ Data comes from public/unofficial sources and may be incomplete or delayed.
 [2025_f1_predictions](https://github.com/mar-antaya/2025_f1_predictions)) were
 used as **concept references only** — this codebase is an independent
 implementation.
+
+## Support
+
+If this project is useful or you'd like to support the work:
+
+☕ **[Buy me a coffee](https://buymeacoffee.com/hatimshahera)**

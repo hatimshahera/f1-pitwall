@@ -1,7 +1,8 @@
 import { useEffect, useRef } from 'react';
-import type { Replay } from '@f1pitwall/shared';
+import type { Point, Replay } from '@f1pitwall/shared';
 import { createTransform, type Transform } from '../core/geometry';
 import { sampleReplay } from '../core/interpolation';
+import { buildTrackRibbon, type TrackRibbon } from '../core/track';
 import type { ReplayEngine } from '../engine/useReplayEngine';
 
 export interface TrackCanvasProps {
@@ -16,11 +17,32 @@ export interface TrackCanvasProps {
   className?: string;
 }
 
-const TRACK_COLOR_LIGHT = '#c8ccd2';
-const TRACK_COLOR_DARK = '#3a3f47';
+interface Theme {
+  surface: string;
+  edge: string;
+  markerStroke: string;
+  label: string;
+  finish: string;
+}
+
+const LIGHT: Theme = {
+  surface: '#e9ebef',
+  edge: '#b6bcc4',
+  markerStroke: '#ffffff',
+  label: '#1a1c1e',
+  finish: '#8a9099',
+};
+const DARK: Theme = {
+  surface: '#23262b',
+  edge: '#3a3f47',
+  markerStroke: '#0b0d10',
+  label: '#e6e8eb',
+  finish: '#6b7280',
+};
 
 /**
- * Renders the track outline and animated car markers to a <canvas>. Drawing is
+ * Renders the track (a filled ribbon built from the racing line, plus a
+ * start/finish line) and animated car markers to a <canvas>. Drawing is
  * imperative and driven by the engine's subscription, so it runs at the display
  * refresh rate without triggering React re-renders.
  */
@@ -35,11 +57,15 @@ export function TrackCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const sizeRef = useRef({ width: 0, height: 0, dpr: 1 });
   const transformRef = useRef<Transform | null>(null);
+  const ribbonRef = useRef<TrackRibbon | null>(null);
 
-  // Keep the canvas backing store sized to its box * devicePixelRatio.
+  // Keep the canvas backing store sized to its box * devicePixelRatio, and keep
+  // the world→screen transform and track ribbon in sync with the replay/size.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    ribbonRef.current = buildTrackRibbon(replay.track.points, replay.track.width);
 
     const applySize = () => {
       const rect = canvas.getBoundingClientRect();
@@ -51,6 +77,7 @@ export function TrackCanvas({
       sizeRef.current = { width, height, dpr };
       transformRef.current = createTransform(replay.track.bounds, width, height, {
         rotation: replay.track.rotation ?? undefined,
+        padding: 28,
       });
     };
 
@@ -72,12 +99,60 @@ export function TrackCanvas({
 
     const prefersDark =
       typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    const trackColor = prefersDark ? TRACK_COLOR_DARK : TRACK_COLOR_LIGHT;
+    const theme = prefersDark ? DARK : LIGHT;
+
+    const projectPath = (transform: Transform, pts: Point[]) => {
+      ctx.beginPath();
+      for (let i = 0; i < pts.length; i++) {
+        const [sx, sy] = transform.project(pts[i]![0], pts[i]![1]);
+        if (i === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      }
+    };
+
+    const drawTrack = (transform: Transform, ribbon: TrackRibbon) => {
+      // Filled surface: outer forward, inner reversed → closed polygon.
+      ctx.beginPath();
+      ribbon.outer.forEach((p, i) => {
+        const [sx, sy] = transform.project(p[0], p[1]);
+        if (i === 0) ctx.moveTo(sx, sy);
+        else ctx.lineTo(sx, sy);
+      });
+      for (let i = ribbon.inner.length - 1; i >= 0; i--) {
+        const [sx, sy] = transform.project(ribbon.inner[i]![0], ribbon.inner[i]![1]);
+        ctx.lineTo(sx, sy);
+      }
+      ctx.closePath();
+      ctx.fillStyle = theme.surface;
+      ctx.fill();
+
+      // Stroked edges.
+      ctx.strokeStyle = theme.edge;
+      ctx.lineWidth = 1.5;
+      ctx.lineJoin = 'round';
+      projectPath(transform, ribbon.outer);
+      ctx.stroke();
+      projectPath(transform, ribbon.inner);
+      ctx.stroke();
+
+      // Start/finish line at index 0 (inner[0] → outer[0]).
+      const [ix, iy] = transform.project(ribbon.inner[0]![0], ribbon.inner[0]![1]);
+      const [ox, oy] = transform.project(ribbon.outer[0]![0], ribbon.outer[0]![1]);
+      ctx.beginPath();
+      ctx.moveTo(ix, iy);
+      ctx.lineTo(ox, oy);
+      ctx.strokeStyle = theme.finish;
+      ctx.lineWidth = 3;
+      ctx.setLineDash([3, 3]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
 
     const draw = (time: number) => {
       const { width, height, dpr } = sizeRef.current;
       const transform = transformRef.current;
-      if (!transform || width === 0) return;
+      const ribbon = ribbonRef.current;
+      if (!transform || !ribbon || width === 0) return;
 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, width, height);
@@ -86,21 +161,8 @@ export function TrackCanvas({
         ctx.fillRect(0, 0, width, height);
       }
 
-      // Track outline (drawn every frame — a few hundred points is cheap).
-      ctx.beginPath();
-      const pts = replay.track.points;
-      for (let i = 0; i < pts.length; i++) {
-        const [sx, sy] = transform.project(pts[i]![0], pts[i]![1]);
-        if (i === 0) ctx.moveTo(sx, sy);
-        else ctx.lineTo(sx, sy);
-      }
-      ctx.strokeStyle = trackColor;
-      ctx.lineWidth = Math.max(2, transform.scale * 0.6);
-      ctx.lineJoin = 'round';
-      ctx.lineCap = 'round';
-      ctx.stroke();
+      drawTrack(transform, ribbon);
 
-      // Cars.
       const frame = sampleReplay(replay, time);
       for (const car of frame.cars) {
         if (car.status === 'RETIRED') continue;
@@ -112,14 +174,14 @@ export function TrackCanvas({
         ctx.fillStyle = color;
         ctx.fill();
         ctx.lineWidth = 1.5;
-        ctx.strokeStyle = prefersDark ? '#0b0d10' : '#ffffff';
+        ctx.strokeStyle = theme.markerStroke;
         ctx.stroke();
 
         if (showLabels) {
           const code = driverCodes.get(car.driverNumber) ?? car.driverNumber;
           ctx.font = '600 10px system-ui, sans-serif';
           ctx.textBaseline = 'middle';
-          ctx.fillStyle = prefersDark ? '#e6e8eb' : '#1a1c1e';
+          ctx.fillStyle = theme.label;
           ctx.fillText(code, sx + markerRadius + 3, sy);
         }
       }

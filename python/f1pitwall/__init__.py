@@ -6,7 +6,8 @@ dashboard and reusable widget consume. See the CLI in ``f1pitwall.cli``.
 
 __version__ = "0.1.0"
 
-SCHEMA_VERSION = "1.0"
+# 2.0 — structure-of-arrays replay encoding (see docs/data-contract.md).
+SCHEMA_VERSION = "2.0"
 
 DISCLAIMER = (
     "This is an unofficial educational/portfolio project. It is not affiliated with "

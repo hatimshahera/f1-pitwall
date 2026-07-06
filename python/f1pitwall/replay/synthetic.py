@@ -1,11 +1,11 @@
 """Deterministic synthetic replay generator.
 
 This produces a polished, good-looking sample replay WITHOUT any network or
-FastF1 dependency, so the dashboard always has something to animate and tests
-have a stable fixture. It is clearly labelled synthetic (``dataSources:
-["synthetic"]``) and uses a fictional event — it does not claim to be a real
-race. Driver codes/teams/colours are public facts used only for a representative
-look.
+FastF1 dependency, so tests have a stable fixture and ``--demo`` works offline.
+It is clearly labelled synthetic (``dataSources: ["synthetic"]``) and uses a
+fictional event and a procedurally-generated circuit — it does not claim to be a
+real race. Driver codes/teams/colours are public facts used only for a
+representative look.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from f1pitwall import DISCLAIMER, SCHEMA_VERSION
 from f1pitwall.models import Replay, ReplayDriver, ReplayMeta, Track
 from f1pitwall.replay.frames import (
     CarSamples,
-    assemble_frames,
+    assemble_car_tracks,
     compute_bounds,
     make_timeline,
 )
@@ -47,21 +47,60 @@ GRID: list[tuple[str, str, str, str, str]] = [
 ]
 
 _COMPOUND_ORDER = ["MEDIUM", "HARD", "SOFT"]
+_TRACK_WIDTH = 18.0
+
+# Hand-placed waypoints outlining a stylised circuit (a long main straight, a
+# hairpin, and a mix of fast/slow corners). Smoothed with a Catmull-Rom spline.
+_WAYPOINTS: list[tuple[float, float]] = [
+    (170, 300),
+    (330, 300),
+    (470, 270),
+    (560, 170),
+    (690, 150),
+    (800, 230),
+    (830, 360),
+    (740, 430),
+    (620, 420),
+    (560, 500),
+    (470, 560),
+    (350, 540),
+    (250, 470),
+    (200, 390),
+]
 
 
-def _build_track(num_dense: int = 2000) -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
+def _catmull_rom_closed(points: list[tuple[float, float]], samples_per_seg: int = 140):
+    """Smooth a closed loop of waypoints with a centripetal-ish Catmull-Rom spline."""
+    pts = np.asarray(points, dtype=float)
+    n = len(pts)
+    t = np.linspace(0.0, 1.0, samples_per_seg, endpoint=False)[:, None]
+    segments = []
+    for i in range(n):
+        p0 = pts[(i - 1) % n]
+        p1 = pts[i % n]
+        p2 = pts[(i + 1) % n]
+        p3 = pts[(i + 2) % n]
+        segments.append(
+            0.5
+            * (
+                (2 * p1)
+                + (-p0 + p2) * t
+                + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t**2
+                + (-p0 + 3 * p1 - 3 * p2 + p3) * t**3
+            )
+        )
+    curve = np.vstack(segments)
+    return curve[:, 0], curve[:, 1]
+
+
+def _build_track() -> tuple[np.ndarray, np.ndarray, np.ndarray, float]:
     """A stylised closed circuit as a dense polyline plus its cumulative arc-length."""
-    theta = np.linspace(0.0, 2.0 * np.pi, num_dense, endpoint=False)
-    radius = 380.0 + 90.0 * np.sin(3.0 * theta) + 45.0 * np.cos(2.0 * theta)
-    xs = 520.0 + radius * np.cos(theta)
-    ys = 500.0 + radius * np.sin(theta)
-    # Close the loop for arc-length continuity.
+    xs, ys = _catmull_rom_closed(_WAYPOINTS)
     xs_closed = np.append(xs, xs[0])
     ys_closed = np.append(ys, ys[0])
     seg = np.hypot(np.diff(xs_closed), np.diff(ys_closed))
     cumulative = np.concatenate([[0.0], np.cumsum(seg)])
-    total = float(cumulative[-1])
-    return xs_closed, ys_closed, cumulative, total
+    return xs_closed, ys_closed, cumulative, float(cumulative[-1])
 
 
 def _point_at_fraction(
@@ -88,13 +127,11 @@ def build_synthetic_replay(
     frame_rate: float = 10.0,
     seed: int = 7,
 ) -> Replay:
-    """Generate a deterministic, visually convincing sample race replay."""
+    """Generate a deterministic, visually convincing sample race replay (SoA)."""
     rng = np.random.default_rng(seed)
     xs_dense, ys_dense, cumulative, total_len = _build_track()
 
     timeline = make_timeline(duration_sec, frame_rate)
-    n = len(timeline)
-    last_index = n - 1
 
     # Pace: laps/sec, faster cars near the front of the grid, with mild per-car
     # oscillation so the order shuffles and cars visibly overtake.
@@ -104,7 +141,7 @@ def build_synthetic_replay(
 
     # One backmarker retires ~65% through the race.
     retire_car = len(GRID) - 2
-    retire_index = int(0.65 * last_index)
+    retire_index = int(0.65 * (len(timeline) - 1))
 
     cars: list[CarSamples] = []
     for i, (number, _code, _name, _team, _color) in enumerate(GRID):
@@ -135,14 +172,14 @@ def build_synthetic_replay(
             )
         )
 
-    frames = assemble_frames(timeline, cars)
+    tl, car_tracks = assemble_car_tracks(timeline, cars)
+
+    # Downsample the track outline for a compact payload.
+    step = max(1, len(xs_dense) // 300)
     points = [
         (round(float(px), 1), round(float(py), 1))
-        for px, py in zip(xs_dense, ys_dense, strict=True)
+        for px, py in zip(xs_dense[::step], ys_dense[::step], strict=True)
     ]
-    # Downsample the track outline for a compact payload.
-    step = max(1, len(points) // 300)
-    points = points[::step]
 
     drivers = [
         ReplayDriver(driver_number=num, code=code, name=name, team=team, color=color)
@@ -159,6 +196,12 @@ def build_synthetic_replay(
         data_sources=["synthetic"],
         disclaimer=DISCLAIMER,
     )
-    track = Track(name=track_name, points=points, bounds=compute_bounds(points))
+    track = Track(
+        name=track_name,
+        points=points,
+        bounds=compute_bounds(points),
+        rotation=0.0,
+        width=_TRACK_WIDTH,
+    )
 
-    return Replay(meta=meta, track=track, drivers=drivers, frames=frames)
+    return Replay(meta=meta, track=track, drivers=drivers, timeline=tl, cars=car_tracks)

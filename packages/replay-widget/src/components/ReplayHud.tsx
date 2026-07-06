@@ -14,7 +14,7 @@ export function ReplayHud({ replay, engine, className }: ReplayHudProps): React.
   const time = useEngineTime(engine, 8);
   const { lap, raceTime } = useMemo(() => sampleReplay(replay, time), [replay, time]);
   const totalLaps = useMemo(
-    () => replay.frames.reduce((max, f) => Math.max(max, f.lap), 0),
+    () => replay.timeline.lap.reduce((max, l) => Math.max(max, l), 0),
     [replay],
   );
 

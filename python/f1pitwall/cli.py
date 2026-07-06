@@ -65,7 +65,9 @@ def generate_replay(
         session = load_race_session(year, race_ref, config.fastf1_cache_dir)
         replay = build_replay_from_session(session, frame_rate=frame_rate)
         path = write_replay(replay, config.public_data_dir, update_latest=update_latest)
-        typer.echo(f"Wrote replay ({replay.meta.race_name}, {len(replay.frames)} frames) -> {path}")
+        typer.echo(
+            f"Wrote replay ({replay.meta.race_name}, {len(replay.timeline.t)} frames) -> {path}"
+        )
         _touch_season_from_replay(replay, config)
     except FastF1Unavailable as exc:
         typer.secho(f"FastF1 error: {exc}", fg=typer.colors.RED, err=True)

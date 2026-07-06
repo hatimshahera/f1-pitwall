@@ -46,6 +46,7 @@ class Track(_Model):
     points: list[tuple[float, float]]
     bounds: Bounds
     rotation: float | None = None
+    width: float
 
 
 class ReplayDriver(_Model):
@@ -56,29 +57,35 @@ class ReplayDriver(_Model):
     color: str
 
 
-class CarFrame(_Model):
+class Timeline(_Model):
+    t: list[float]
+    lap: list[int]
+
+
+# A change-segment: [start_frame_index, value]. The value applies until the next.
+StatusSegment = tuple[int, CarStatus]
+CompoundSegment = tuple[int, TyreCompound | None]
+
+
+class CarTrack(_Model):
+    """One driver's whole race as parallel arrays indexed by frame."""
+
     driver_number: str
-    x: float
-    y: float
-    position: int
-    gap_to_leader: float | None = None
-    interval: float | None = None
-    status: CarStatus = "RUNNING"
-    compound: TyreCompound | None = None
-
-
-class Frame(_Model):
-    t: float
-    lap: int
-    race_time: str
-    cars: list[CarFrame]
+    x: list[float]
+    y: list[float]
+    position: list[int]
+    gap_to_leader: list[float | None] | None = None
+    interval: list[float | None] | None = None
+    status_segments: list[StatusSegment]
+    compound_segments: list[CompoundSegment]
 
 
 class Replay(_Model):
     meta: ReplayMeta
     track: Track
     drivers: list[ReplayDriver]
-    frames: list[Frame]
+    timeline: Timeline
+    cars: list[CarTrack]
 
 
 class SeasonRace(_Model):

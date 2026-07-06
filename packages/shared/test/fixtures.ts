@@ -1,7 +1,7 @@
-import { DISCLAIMER, SCHEMA_VERSION } from '../src/constants.js';
-import type { Replay } from '../src/index.js';
+import { DISCLAIMER, SCHEMA_VERSION } from '../src/constants';
+import type { Replay } from '../src/index';
 
-/** A minimal but fully valid replay used across schema tests. */
+/** A minimal but fully valid v2 (structure-of-arrays) replay for schema tests. */
 export function makeValidReplay(): Replay {
   return {
     meta: {
@@ -24,27 +24,26 @@ export function makeValidReplay(): Replay {
         [0, 0],
       ],
       bounds: { minX: 0, maxX: 100, minY: 0, maxY: 100 },
+      rotation: 0,
+      width: 10,
     },
     drivers: [
       { driverNumber: '4', code: 'NOR', name: 'Lando Norris', team: 'McLaren', color: '#FF8000' },
     ],
-    frames: [
+    timeline: {
+      t: [0, 1, 2],
+      lap: [1, 1, 2],
+    },
+    cars: [
       {
-        t: 0,
-        lap: 1,
-        raceTime: '00:00:00',
-        cars: [
-          {
-            driverNumber: '4',
-            x: 0,
-            y: 0,
-            position: 1,
-            gapToLeader: null,
-            interval: null,
-            status: 'RUNNING',
-            compound: 'MEDIUM',
-          },
-        ],
+        driverNumber: '4',
+        x: [0, 50, 100],
+        y: [0, 0, 0],
+        position: [1, 1, 1],
+        gapToLeader: [null, null, null],
+        interval: [null, null, null],
+        statusSegments: [[0, 'RUNNING']],
+        compoundSegments: [[0, 'MEDIUM']],
       },
     ],
   };

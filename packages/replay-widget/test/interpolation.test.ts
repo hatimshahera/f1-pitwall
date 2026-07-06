@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { Replay } from '@f1pitwall/shared';
-import { findFloorIndex, replayDuration, sampleReplay } from '../src/core/interpolation.js';
+import { findFloorIndex, replayDuration, sampleReplay } from '../src/core/interpolation';
 
 function twoFrameReplay(): Replay {
   return {
     meta: {
-      schemaVersion: '1.0',
+      schemaVersion: '2.0',
       year: 2026,
       raceName: 'Test GP',
       session: 'R',
@@ -21,41 +21,22 @@ function twoFrameReplay(): Replay {
         [10, 10],
       ],
       bounds: { minX: 0, maxX: 10, minY: 0, maxY: 10 },
+      width: 2,
     },
     drivers: [{ driverNumber: '1', code: 'AAA', name: 'A', team: 'T', color: '#ff0000' }],
-    frames: [
+    timeline: { t: [0, 10], lap: [1, 2] },
+    cars: [
       {
-        t: 0,
-        lap: 1,
-        raceTime: '00:00:00',
-        cars: [
-          {
-            driverNumber: '1',
-            x: 0,
-            y: 0,
-            position: 1,
-            gapToLeader: 0,
-            interval: null,
-            status: 'RUNNING',
-            compound: 'MEDIUM',
-          },
-        ],
-      },
-      {
-        t: 10,
-        lap: 2,
-        raceTime: '00:00:10',
-        cars: [
-          {
-            driverNumber: '1',
-            x: 100,
-            y: 200,
-            position: 1,
-            gapToLeader: 0,
-            interval: null,
-            status: 'RUNNING',
-            compound: 'MEDIUM',
-          },
+        driverNumber: '1',
+        x: [0, 100],
+        y: [0, 200],
+        position: [1, 1],
+        gapToLeader: [0, 0],
+        interval: [null, null],
+        statusSegments: [[0, 'RUNNING']],
+        compoundSegments: [
+          [0, 'MEDIUM'],
+          [1, 'HARD'],
         ],
       },
     ],
@@ -69,16 +50,16 @@ describe('replayDuration', () => {
 });
 
 describe('findFloorIndex', () => {
-  const frames = twoFrameReplay().frames;
+  const times = twoFrameReplay().timeline.t;
   it('clamps below the first frame', () => {
-    expect(findFloorIndex(frames, -5)).toBe(0);
+    expect(findFloorIndex(times, -5)).toBe(0);
   });
   it('clamps above the last frame', () => {
-    expect(findFloorIndex(frames, 999)).toBe(1);
+    expect(findFloorIndex(times, 999)).toBe(1);
   });
   it('returns the floor for a mid time', () => {
-    expect(findFloorIndex(frames, 4.9)).toBe(0);
-    expect(findFloorIndex(frames, 10)).toBe(1);
+    expect(findFloorIndex(times, 4.9)).toBe(0);
+    expect(findFloorIndex(times, 10)).toBe(1);
   });
 });
 
@@ -89,10 +70,16 @@ describe('sampleReplay', () => {
     expect(frame.cars[0]!.y).toBeCloseTo(100, 5);
   });
 
-  it('takes discrete fields (lap, raceTime) from the floor frame', () => {
+  it('takes discrete fields (lap, raceTime, compound) from the floor frame', () => {
     const frame = sampleReplay(twoFrameReplay(), 5);
     expect(frame.lap).toBe(1);
-    expect(frame.raceTime).toBe('00:00:00');
+    expect(frame.raceTime).toBe('00:00');
+    expect(frame.cars[0]!.compound).toBe('MEDIUM');
+  });
+
+  it('resolves change-segments (compound switches at frame 1)', () => {
+    const frame = sampleReplay(twoFrameReplay(), 10);
+    expect(frame.cars[0]!.compound).toBe('HARD');
   });
 
   it('returns exact endpoints without overshoot', () => {

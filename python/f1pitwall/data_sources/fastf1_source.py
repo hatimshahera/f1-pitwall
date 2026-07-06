@@ -23,7 +23,7 @@ from f1pitwall.models import (
 )
 from f1pitwall.replay.frames import (
     CarSamples,
-    assemble_frames,
+    assemble_car_tracks,
     choose_frame_rate,
     compute_bounds,
     make_timeline,
@@ -123,25 +123,55 @@ def _driver_progress(pos) -> np.ndarray:
     return np.cumsum(seg)
 
 
+def _circuit_rotation_radians(session) -> float | None:
+    """Per-circuit display rotation (radians) from FastF1, matching TV orientation."""
+    try:
+        rot = session.get_circuit_info().rotation
+        return None if rot is None else float(np.deg2rad(rot))
+    except Exception:
+        return None
+
+
+def _classification(results, pd) -> tuple[dict[str, bool], str | None]:
+    """Map driverNumber -> is_retired (from official Status) and find the winner.
+
+    A driver is a classified finisher when Status is 'Finished' or '+N Lap(s)';
+    anything else (DNF, Accident, Retired, …) counts as retired. This replaces the
+    old data-ends-early heuristic that wrongly flagged race winners as retired.
+    """
+    retired: dict[str, bool] = {}
+    winner: str | None = None
+    try:
+        for _, row in results.iterrows():
+            dn = str(row["DriverNumber"])
+            status = str(row.get("Status") or "")
+            retired[dn] = not (status.startswith("Finished") or status.startswith("+"))
+            classified = row.get("Position")
+            if classified is not None and not pd.isna(classified) and int(classified) == 1:
+                winner = dn
+    except Exception:
+        pass
+    return retired, winner
+
+
 def build_replay_from_session(
-    session, *, frame_rate: float = 10.0, track_points: int = 300, max_frames: int = 3000
+    session, *, frame_rate: float = 5.0, track_points: int = 400, max_frames: int = 8000
 ) -> Replay:
-    """Convert a loaded FastF1 race session into a validated Replay model."""
+    """Convert a loaded FastF1 race session into a validated Replay model (SoA)."""
     import pandas as pd  # noqa: PLC0415
 
     laps = session.laps
     if laps is None or len(laps) == 0:
         raise FastF1Unavailable("Session has no lap data to build a replay from.")
 
-    # Establish a common t0 (earliest position sample across the field).
+    # Collect each driver's position telemetry and a common t0/t_end.
     driver_numbers = [str(d) for d in session.drivers]
     per_driver_pos: dict[str, pd.DataFrame] = {}
     t0 = None
     t_end = None
     for drv in driver_numbers:
         try:
-            drv_laps = laps.pick_drivers(drv)
-            pos = drv_laps.get_pos_data()
+            pos = laps.pick_drivers(drv).get_pos_data()
         except Exception:
             continue
         if pos is None or len(pos) == 0 or "X" not in pos:
@@ -158,31 +188,38 @@ def build_replay_from_session(
     if not per_driver_pos or t0 is None or t_end is None:
         raise FastF1Unavailable("No usable position data found for any driver.")
 
+    results = session.results
+    retired_map, winner = _classification(results, pd)
+
+    # Trim the timeline to the leader's finish so cool-down laps aren't replayed.
     duration = (t_end - t0).total_seconds()
+    if winner is not None:
+        try:
+            finish = (laps.pick_drivers(winner)["Time"].dropna().max() - t0).total_seconds()
+            if finish and finish > 0:
+                duration = min(duration, finish + 2.0)
+        except Exception:
+            pass
+
     effective_fps = choose_frame_rate(duration, frame_rate, max_frames)
     timeline = make_timeline(duration, effective_fps)
+    last_index = len(timeline) - 1
 
-    # Track outline from the fastest lap's shape.
+    # Track centerline from the fastest lap (the racing line).
     try:
-        fastest = laps.pick_fastest()
-        ref_pos = fastest.get_pos_data().dropna(subset=["X", "Y"])
+        ref_pos = laps.pick_fastest().get_pos_data().dropna(subset=["X", "Y"])
         points = resample_polyline(
-            ref_pos["X"].to_numpy(dtype=float),
-            ref_pos["Y"].to_numpy(dtype=float),
-            track_points,
+            ref_pos["X"].to_numpy(dtype=float), ref_pos["Y"].to_numpy(dtype=float), track_points
         )
     except Exception:
         any_pos = next(iter(per_driver_pos.values()))
         points = resample_polyline(
             any_pos["X"].to_numpy(dtype=float), any_pos["Y"].to_numpy(dtype=float), track_points
         )
-    points = [(round(px, 2), round(py, 2)) for px, py in points]
+    points = [(round(px, 1), round(py, 1)) for px, py in points]
 
-    # Per-driver samples resampled onto the shared timeline.
-    results = session.results
     cars: list[CarSamples] = []
     drivers_meta: list[ReplayDriver] = []
-    last_index = len(timeline) - 1
 
     for drv, pos in per_driver_pos.items():
         src_t = (pos["SessionTime"] - t0).dt.total_seconds().to_numpy()
@@ -207,12 +244,11 @@ def build_replay_from_session(
         if "Position" in drv_laps:
             pos_series = drv_laps["Position"].ffill().bfill()
             if pos_series.notna().any():
-                lap_positions = pos_series.fillna(99).to_numpy(dtype=float)
-                positions_arr = lap_positions[lap_idx]
+                positions_arr = pos_series.fillna(99).to_numpy(dtype=float)[lap_idx]
 
-        # Retirement: car's data ends well before the race end.
+        # Retirement comes from the official classification, not the data length.
         retire_index = None
-        if src_t[-1] < duration - 5.0:
+        if retired_map.get(drv, False) and src_t[-1] < duration - 2.0:
             retire_index = int(np.clip(np.searchsorted(timeline, src_t[-1]), 0, last_index))
 
         cars.append(
@@ -229,7 +265,7 @@ def build_replay_from_session(
         )
         drivers_meta.append(_driver_meta(drv, results))
 
-    frames = assemble_frames(timeline, cars)
+    tl, car_tracks = assemble_car_tracks(timeline, cars)
 
     event_name = session.event["EventName"]
     meta = ReplayMeta(
@@ -246,8 +282,10 @@ def build_replay_from_session(
         name=str(session.event.get("Location", event_name)),
         points=points,
         bounds=compute_bounds(points),
+        rotation=_circuit_rotation_radians(session),
+        width=200.0,
     )
-    return Replay(meta=meta, track=track, drivers=drivers_meta, frames=frames)
+    return Replay(meta=meta, track=track, drivers=drivers_meta, timeline=tl, cars=car_tracks)
 
 
 def _normalise_compound(value: object) -> str | None:

@@ -14,8 +14,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from f1pitwall.models import Bounds, CarFrame, CarStatus, Frame
-from f1pitwall.util import format_clock
+from f1pitwall.models import Bounds, CarStatus, CarTrack, Timeline
 
 
 @dataclass
@@ -110,56 +109,67 @@ def _frame_sort_key(car: CarSamples, fi: int, retired: bool) -> tuple[int, float
     return (0, -float(car.progress[fi]))
 
 
-def assemble_frames(timeline: np.ndarray, cars: list[CarSamples]) -> list[Frame]:
-    """Build the per-frame car list with clean, gap-free 1..N positions.
+def _rle_segments(values: list) -> list[tuple[int, object]]:
+    """Run-length-encode a per-frame list into ``[start_index, value]`` segments."""
+    segments: list[tuple[int, object]] = []
+    for i, v in enumerate(values):
+        if not segments or segments[-1][1] != v:
+            segments.append((i, v))
+    return segments
 
-    Cars are ordered by :func:`_frame_sort_key` and then renumbered sequentially,
-    so the output is always a valid permutation even if the source positions have
-    gaps. Retired cars are marked RETIRED and ranked last; the leader on the final
-    frame is marked FINISHED.
+
+def assemble_car_tracks(
+    timeline: np.ndarray, cars: list[CarSamples]
+) -> tuple[Timeline, list[CarTrack]]:
+    """Build the structure-of-arrays replay body from per-driver samples.
+
+    For every frame, cars are ranked by :func:`_frame_sort_key` and renumbered to
+    a gap-free ``1..N`` permutation. Each car's position/status/compound are then
+    written into parallel per-frame arrays; status and compound are stored as
+    run-length change-segments to keep the payload small. Retired cars are ranked
+    last and marked RETIRED; the leader on the final frame is marked FINISHED.
     """
-    frames: list[Frame] = []
-    last_index = len(timeline) - 1
+    n = len(timeline)
+    last_index = n - 1
 
-    for fi, t in enumerate(timeline):
+    positions: dict[str, list[int]] = {c.driver_number: [0] * n for c in cars}
+    statuses: dict[str, list[CarStatus]] = {c.driver_number: ["RUNNING"] * n for c in cars}
+
+    for fi in range(n):
         ranked = sorted(
             cars,
             key=lambda car: _frame_sort_key(
                 car, fi, car.retire_index is not None and fi > car.retire_index
             ),
         )
-
-        car_frames: list[CarFrame] = []
         for rank, car in enumerate(ranked, start=1):
+            positions[car.driver_number][fi] = rank
             retired = car.retire_index is not None and fi > car.retire_index
-            idx = car.retire_index if (retired and car.retire_index is not None) else fi
             if retired:
-                status: CarStatus = "RETIRED"
+                statuses[car.driver_number][fi] = "RETIRED"
             elif fi == last_index and rank == 1:
-                status = "FINISHED"
-            else:
-                status = "RUNNING"
-            car_frames.append(
-                CarFrame(
-                    driver_number=car.driver_number,
-                    x=round(float(car.xs[idx]), 1),
-                    y=round(float(car.ys[idx]), 1),
-                    position=rank,
-                    gap_to_leader=None,
-                    interval=None,
-                    status=status,
-                    compound=car.compounds[idx],  # type: ignore[arg-type]
-                )
-            )
+                statuses[car.driver_number][fi] = "FINISHED"
 
-        lap = int(max((car.laps[fi] for car in cars), default=0))
-        frames.append(
-            Frame(
-                t=round(float(t), 3),
-                lap=lap,
-                race_time=format_clock(float(t)),
-                cars=car_frames,
+    car_tracks: list[CarTrack] = []
+    for car in cars:
+        # Retired cars hold their last-known position for the remaining frames.
+        xs = car.xs.copy()
+        ys = car.ys.copy()
+        if car.retire_index is not None and car.retire_index < last_index:
+            xs[car.retire_index + 1 :] = xs[car.retire_index]
+            ys[car.retire_index + 1 :] = ys[car.retire_index]
+
+        car_tracks.append(
+            CarTrack(
+                driver_number=car.driver_number,
+                x=[round(float(v), 1) for v in xs],
+                y=[round(float(v), 1) for v in ys],
+                position=positions[car.driver_number],
+                status_segments=_rle_segments(statuses[car.driver_number]),  # type: ignore[arg-type]
+                compound_segments=_rle_segments(car.compounds),  # type: ignore[arg-type]
             )
         )
 
-    return frames
+    lap = [int(max((car.laps[fi] for car in cars), default=0)) for fi in range(n)]
+    tl = Timeline(t=[round(float(t), 3) for t in timeline], lap=lap)
+    return tl, car_tracks

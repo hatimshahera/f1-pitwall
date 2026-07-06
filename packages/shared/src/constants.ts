@@ -6,8 +6,11 @@
  * The schema version embedded in every generated JSON file. Bump the MAJOR
  * component only for breaking changes to the contract so consumers (dashboard,
  * widget, external sites) can detect incompatibility instead of mis-rendering.
+ *
+ * 2.0 — replay uses a structure-of-arrays encoding (per-driver typed arrays)
+ *       so real full-race replays ship efficiently. See docs/data-contract.md.
  */
-export const SCHEMA_VERSION = '1.0' as const;
+export const SCHEMA_VERSION = '2.0' as const;
 
 /**
  * The single canonical disclaimer. Kept here so the pipeline, dashboard footer,

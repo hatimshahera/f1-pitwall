@@ -15,7 +15,7 @@ def test_write_replay_creates_race_and_latest(tmp_path):
     assert (tmp_path / "latest-replay.json").exists()
 
     data = json.loads(path.read_text())
-    assert data["meta"]["schemaVersion"] == "1.0"
+    assert data["meta"]["schemaVersion"] == "2.0"
     assert data["meta"]["raceName"] == replay.meta.race_name
     # Latest mirrors the race file exactly.
     assert data == json.loads((tmp_path / "latest-replay.json").read_text())

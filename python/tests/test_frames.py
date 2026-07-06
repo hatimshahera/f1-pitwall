@@ -2,7 +2,8 @@ import numpy as np
 
 from f1pitwall.replay.frames import (
     CarSamples,
-    assemble_frames,
+    _rle_segments,
+    assemble_car_tracks,
     compute_bounds,
     make_timeline,
     resample,
@@ -40,9 +41,14 @@ def test_compute_bounds():
     assert (b.min_x, b.max_x, b.min_y, b.max_y) == (0.0, 10.0, -3.0, 8.0)
 
 
-def test_assemble_frames_orders_by_progress_and_marks_retirement():
-    tl = make_timeline(1.0, 10.0)
-    n = len(tl)
+def test_rle_segments():
+    assert _rle_segments(["A", "A", "B", "B", "A"]) == [(0, "A"), (2, "B"), (4, "A")]
+    assert _rle_segments(["X"]) == [(0, "X")]
+
+
+def test_assemble_car_tracks_orders_by_progress_and_marks_retirement():
+    tl_arr = make_timeline(1.0, 10.0)
+    n = len(tl_arr)
     fast = CarSamples(
         driver_number="1",
         xs=np.zeros(n),
@@ -60,19 +66,16 @@ def test_assemble_frames_orders_by_progress_and_marks_retirement():
         compounds=["MEDIUM"] * n,
         retire_index=3,
     )
-    frames = assemble_frames(tl, [fast, slow])
-    assert len(frames) == n
+    timeline, tracks = assemble_car_tracks(tl_arr, [fast, slow])
+    assert len(timeline.t) == n
+    by = {t.driver_number: t for t in tracks}
 
-    # Early frame: both running, faster car leads.
-    early = frames[1]
-    positions = {c.driver_number: c.position for c in early.cars}
-    assert positions["1"] == 1
-    assert positions["2"] == 2
+    # Early frame: faster car leads.
+    assert by["1"].position[1] == 1
+    assert by["2"].position[1] == 2
 
-    # After retirement index, car 2 is marked RETIRED and ranked last.
-    late = frames[-1]
-    retired = [c for c in late.cars if c.driver_number == "2"][0]
-    assert retired.status == "RETIRED"
-    leader = [c for c in late.cars if c.position == 1][0]
-    assert leader.driver_number == "1"
-    assert leader.status == "FINISHED"
+    # Final frame: leader finished P1; retired car ranked last and marked RETIRED.
+    assert by["1"].position[-1] == 1
+    assert by["2"].position[-1] == 2
+    assert "FINISHED" in [v for _, v in by["1"].status_segments]
+    assert "RETIRED" in [v for _, v in by["2"].status_segments]

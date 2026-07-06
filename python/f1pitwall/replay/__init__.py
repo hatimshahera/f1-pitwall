@@ -2,7 +2,7 @@
 
 from f1pitwall.replay.frames import (
     CarSamples,
-    assemble_frames,
+    assemble_car_tracks,
     choose_frame_rate,
     compute_bounds,
     make_timeline,
@@ -12,7 +12,7 @@ from f1pitwall.replay.frames import (
 
 __all__ = [
     "CarSamples",
-    "assemble_frames",
+    "assemble_car_tracks",
     "choose_frame_rate",
     "compute_bounds",
     "make_timeline",

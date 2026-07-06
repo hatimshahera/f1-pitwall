@@ -34,6 +34,7 @@ export { useReplayData, type AsyncState } from './engine/useReplayData';
 
 // Pure core (also useful for tests and non-React consumers)
 export { createTransform, type Transform } from './core/geometry';
+export { buildTrackRibbon, type TrackRibbon } from './core/track';
 export {
   sampleReplay,
   replayDuration,

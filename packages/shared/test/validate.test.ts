@@ -13,12 +13,12 @@ describe('validateReplay', () => {
     expect(result.ok).toBe(true);
   });
 
-  it('rejects a replay with no frames', () => {
+  it('rejects a replay with no cars', () => {
     const replay = makeValidReplay();
-    replay.frames = [];
+    replay.cars = [];
     const result = validateReplay(replay);
     expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.errors.join(' ')).toMatch(/frames/);
+    if (!result.ok) expect(result.errors.join(' ')).toMatch(/cars/);
   });
 
   it('rejects an invalid hex colour', () => {
@@ -29,17 +29,25 @@ describe('validateReplay', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('rejects an unknown car status', () => {
+  it('rejects an unknown car status in a segment', () => {
     const replay = makeValidReplay();
     // @ts-expect-error intentionally invalid for the test
-    replay.frames[0].cars[0].status = 'FLYING';
+    replay.cars[0].statusSegments = [[0, 'FLYING']];
     expect(validateReplay(replay).ok).toBe(false);
+  });
+
+  it('rejects a car array whose length does not match the timeline', () => {
+    const replay = makeValidReplay();
+    replay.cars[0]!.x = [0, 50]; // timeline has length 3
+    const result = validateReplay(replay);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.errors.join(' ')).toMatch(/does not match timeline/);
   });
 
   it('allows nullable gap/interval/compound (graceful degradation)', () => {
     const replay = makeValidReplay();
-    replay.frames[0]!.cars[0]!.compound = null;
-    replay.frames[0]!.cars[0]!.gapToLeader = null;
+    replay.cars[0]!.compoundSegments = [[0, null]];
+    replay.cars[0]!.gapToLeader = [null, null, null];
     expect(validateReplay(replay).ok).toBe(true);
   });
 });

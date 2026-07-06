@@ -1,4 +1,5 @@
-import type { CarFrame, Frame, Replay } from '@f1pitwall/shared';
+import type { CarStatus, CarTrack, Replay, TyreCompound } from '@f1pitwall/shared';
+import { formatClock } from './format';
 
 /**
  * A car's state sampled at an arbitrary time. Continuous fields (x, y) are
@@ -6,9 +7,15 @@ import type { CarFrame, Frame, Replay } from '@f1pitwall/shared';
  * discrete fields (position, status, compound, gaps) are taken from the "floor"
  * frame because interpolating them is meaningless.
  */
-export interface SampledCar extends CarFrame {
+export interface SampledCar {
+  driverNumber: string;
   x: number;
   y: number;
+  position: number;
+  gapToLeader: number | null;
+  interval: number | null;
+  status: CarStatus;
+  compound: TyreCompound | null;
 }
 
 export interface SampledFrame {
@@ -20,23 +27,23 @@ export interface SampledFrame {
 
 /** Total playback duration in seconds (time of the last frame). */
 export function replayDuration(replay: Replay): number {
-  const frames = replay.frames;
-  return frames.length > 0 ? frames[frames.length - 1]!.t : 0;
+  const t = replay.timeline.t;
+  return t.length > 0 ? t[t.length - 1]! : 0;
 }
 
 /**
- * Binary-search the frame whose `t` is the greatest value <= `time`.
+ * Binary-search the frame whose time is the greatest value <= `time`.
  * Returns the floor index, clamped to a valid range.
  */
-export function findFloorIndex(frames: Frame[], time: number): number {
-  if (frames.length === 0) return 0;
+export function findFloorIndex(times: number[], time: number): number {
+  if (times.length === 0) return 0;
   let lo = 0;
-  let hi = frames.length - 1;
-  if (time <= frames[0]!.t) return 0;
-  if (time >= frames[hi]!.t) return hi;
+  let hi = times.length - 1;
+  if (time <= times[0]!) return 0;
+  if (time >= times[hi]!) return hi;
   while (lo < hi) {
     const mid = (lo + hi + 1) >> 1;
-    if (frames[mid]!.t <= time) lo = mid;
+    if (times[mid]! <= time) lo = mid;
     else hi = mid - 1;
   }
   return lo;
@@ -47,27 +54,44 @@ function lerp(a: number, b: number, alpha: number): number {
 }
 
 /**
+ * Resolve a change-segment value at frame `index`: the value of the last segment
+ * whose start frame is <= index. Segments are sorted and start at frame 0.
+ */
+function segmentValueAt<T>(segments: Array<[number, T]>, index: number): T | null {
+  let value: T | null = segments.length > 0 ? segments[0]![1] : null;
+  for (const [start, v] of segments) {
+    if (start <= index) value = v;
+    else break;
+  }
+  return value;
+}
+
+/**
  * Sample the whole field at `time`, interpolating car positions between frames.
- * Cars are matched by `driverNumber`; a car missing from the next frame keeps
- * its floor-frame position (graceful degradation).
  */
 export function sampleReplay(replay: Replay, time: number): SampledFrame {
-  const frames = replay.frames;
-  const floorIndex = findFloorIndex(frames, time);
-  const floor = frames[floorIndex]!;
-  const next = frames[Math.min(floorIndex + 1, frames.length - 1)];
+  const times = replay.timeline.t;
+  const floor = findFloorIndex(times, time);
+  const next = Math.min(floor + 1, times.length - 1);
 
-  const span = next && next.t > floor.t ? next.t - floor.t : 0;
-  const alpha = span > 0 ? Math.min(Math.max((time - floor.t) / span, 0), 1) : 0;
+  const span = times[next]! - times[floor]!;
+  const alpha = span > 0 ? Math.min(Math.max((time - times[floor]!) / span, 0), 1) : 0;
 
-  const nextByDriver = new Map<string, CarFrame>();
-  if (next) for (const car of next.cars) nextByDriver.set(car.driverNumber, car);
+  const cars: SampledCar[] = replay.cars.map((car: CarTrack) => ({
+    driverNumber: car.driverNumber,
+    x: alpha === 0 ? car.x[floor]! : lerp(car.x[floor]!, car.x[next]!, alpha),
+    y: alpha === 0 ? car.y[floor]! : lerp(car.y[floor]!, car.y[next]!, alpha),
+    position: car.position[floor]!,
+    gapToLeader: car.gapToLeader ? (car.gapToLeader[floor] ?? null) : null,
+    interval: car.interval ? (car.interval[floor] ?? null) : null,
+    status: segmentValueAt(car.statusSegments, floor) ?? 'UNKNOWN',
+    compound: segmentValueAt(car.compoundSegments, floor),
+  }));
 
-  const cars: SampledCar[] = floor.cars.map((car) => {
-    const to = nextByDriver.get(car.driverNumber);
-    if (!to || alpha === 0) return { ...car };
-    return { ...car, x: lerp(car.x, to.x, alpha), y: lerp(car.y, to.y, alpha) };
-  });
-
-  return { t: time, lap: floor.lap, raceTime: floor.raceTime, cars };
+  return {
+    t: time,
+    lap: replay.timeline.lap[floor] ?? 0,
+    raceTime: formatClock(times[floor]!),
+    cars,
+  };
 }
