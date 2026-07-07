@@ -20,6 +20,15 @@ export function SiteFooter(): React.JSX.Element {
       >
         GitHub
       </a>
+      <span aria-hidden>·</span>
+      <a
+        className="underline"
+        href="https://buymeacoffee.com/hatimshahera"
+        rel="noreferrer"
+        target="_blank"
+      >
+        ☕ Buy me a coffee
+      </a>
     </footer>
   );
 }
