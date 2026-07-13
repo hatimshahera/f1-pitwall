@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-07-06T21:41:52Z",
+  "generatedAt": "2026-07-13T10:51:13Z",
   "races": [
     {
       "round": 1,
@@ -72,7 +72,7 @@
       "slug": "british-grand-prix",
       "session": "R",
       "hasReplay": true,
-      "date": null
+      "date": "2026-07-05T14:00:00Z"
     },
     {
       "round": 10,
