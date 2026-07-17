@@ -34,7 +34,11 @@ def generate_replay(
     race: str = typer.Option("latest", help="Round number, race name, or 'latest'."),
     frame_rate: float = typer.Option(10.0, help="Frames per second in the output timeline."),
     demo: bool = typer.Option(False, "--demo", help="Generate a synthetic sample (no network)."),
-    update_latest: bool = typer.Option(True, help="Also write latest-replay.json."),
+    update_latest: bool = typer.Option(
+        True,
+        "--update-latest/--no-update-latest",
+        help="Also write latest-replay.json.",
+    ),
 ) -> None:
     """Generate a race replay and write it to public-data/."""
     config = Config.load()

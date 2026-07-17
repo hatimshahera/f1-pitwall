@@ -48,7 +48,7 @@ jobs:
         run: python -m f1pitwall generate-season-index --year "${{ steps.year.outputs.value }}"
 
       - name: Synthetic sample replay (offline demo race)
-        run: python -m f1pitwall generate-replay --demo --year "${{ steps.year.outputs.value }}"
+        run: python -m f1pitwall generate-replay --demo --year "${{ steps.year.outputs.value }}" --no-update-latest
 
       - name: Latest real race replay (becomes latest-replay.json)
         continue-on-error: true # a mid-season gap or data hiccup shouldn't fail the run
