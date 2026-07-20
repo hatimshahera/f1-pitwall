@@ -119,9 +119,9 @@ and stay off the personal-site widget.
   thing. Phase 2 fixed the root cause with a **structure-of-arrays** encoding
   (schemaVersion 2.0): the timeline once, then per-driver typed arrays, with
   run-length change-segments for status/compound. The real 2026 British GP went
-  from **8.4 MB to 2.9 MB** and is now the default replay. Lesson: pick the data
-  layout for the access pattern (dense per-frame reads), not for how it reads in a
-  code sample.
+  from **8.4 MB to 2.9 MB**, proving the full-race replay could become the
+  default experience. Lesson: pick the data layout for the access pattern (dense
+  per-frame reads), not for how it reads in a code sample.
 - **Two bugs marked race winners "retired".** My first cut used telemetry length
   as a retirement signal — but a winner's position data _ends when they cross the
   line_, so finishers got flagged as retired and a backmarker floated to P1. And an

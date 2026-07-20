@@ -113,11 +113,11 @@ Output lands in `public-data/` and is picked up by the dashboard on the next
 `pnpm dev`/`build`. See **[docs/data-contract.md](docs/data-contract.md)** for the
 exact JSON shape.
 
-> **On the data:** the default replay is the **real 2026 British Grand Prix**
-> (real Silverstone outline, correct finishing order), encoded with the
-> structure-of-arrays format so a full race is ~3 MB. A polished **synthetic**
-> sample is also included (and used by tests / offline `--demo`). The real 2026
-> **schedule** and **next race** are live FastF1 data. Details in
+> **On the data:** the default replay is the **real 2026 Belgian Grand Prix**
+> (real Spa-Francorchamps outline, correct finishing order), encoded with the
+> structure-of-arrays format so a full race stays only a few MB. A polished
+> **synthetic** sample is also included (and used by tests / offline `--demo`).
+> The real 2026 **schedule** and **next race** are live FastF1 data. Details in
 > [docs/lesson.md](docs/lesson.md).
 
 ## Consuming the data from another site
@@ -202,7 +202,7 @@ Data comes from public/unofficial sources and may be incomplete or delayed.
 - **Phase 1** — monorepo, dashboard, reusable widget, replay pipeline, real 2026
   schedule, synthetic sample replay, docs. ✅
 - **Phase 2** — structure-of-arrays replay encoding (schemaVersion 2.0), real
-  full-race replays (2026 British GP as default), track ribbon + per-circuit
+  full-race replays (latest completed GP as default), track ribbon + per-circuit
   rotation, correct results-based ordering/retirement. ✅
 - **Phase 3** — experimental podium predictions: notebook workspace + data/export
   scaffolding wired to the dashboard's predictions panel (modelling is a WIP). 🚧

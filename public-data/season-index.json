@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-07-20T10:42:45Z",
+  "generatedAt": "2026-07-20T18:38:33Z",
   "races": [
     {
       "round": 1,
@@ -79,16 +79,8 @@
       "raceName": "Belgian Grand Prix",
       "slug": "belgian-grand-prix",
       "session": "R",
-      "hasReplay": false,
-      "date": "2026-07-19T13:00:00Z"
-    },
-    {
-      "round": 11,
-      "raceName": "Sample Grand Prix",
-      "slug": "sample-grand-prix",
-      "session": "R",
       "hasReplay": true,
-      "date": null
+      "date": "2026-07-19T13:00:00Z"
     }
   ]
 }
