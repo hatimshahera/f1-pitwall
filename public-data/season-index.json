@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-08-17T08:32:57Z",
+  "generatedAt": "2026-08-24T08:37:34Z",
   "races": [
     {
       "round": 1,
@@ -92,6 +92,14 @@
     },
     {
       "round": 12,
+      "raceName": "Dutch Grand Prix",
+      "slug": "dutch-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-08-23T13:00:00Z"
+    },
+    {
+      "round": 13,
       "raceName": "Sample Grand Prix",
       "slug": "sample-grand-prix",
       "session": "R",
