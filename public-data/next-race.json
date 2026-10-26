@@ -1,15 +1,15 @@
 {
   "year": 2026,
-  "raceName": "United States Grand Prix",
-  "round": 18,
-  "circuit": "Austin",
-  "country": "United States",
-  "date": "2026-10-25T20:00:00Z",
+  "raceName": "Mexico City Grand Prix",
+  "round": 19,
+  "circuit": "Mexico City",
+  "country": "Mexico",
+  "date": "2026-11-01T20:00:00Z",
   "sessions": [
     {
       "name": "Race",
-      "startsAt": "2026-10-25T20:00:00Z"
+      "startsAt": "2026-11-01T20:00:00Z"
     }
   ],
-  "generatedAt": "2026-10-19T15:10:38Z"
+  "generatedAt": "2026-10-26T14:41:36Z"
 }

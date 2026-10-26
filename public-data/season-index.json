@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-10-19T15:10:39Z",
+  "generatedAt": "2026-10-26T14:41:37Z",
   "races": [
     {
       "round": 1,
@@ -140,6 +140,14 @@
     },
     {
       "round": 18,
+      "raceName": "United States Grand Prix",
+      "slug": "united-states-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-10-25T20:00:00Z"
+    },
+    {
+      "round": 19,
       "raceName": "Sample Grand Prix",
       "slug": "sample-grand-prix",
       "session": "R",
