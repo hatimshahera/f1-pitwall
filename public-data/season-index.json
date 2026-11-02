@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-10-26T14:41:37Z",
+  "generatedAt": "2026-11-02T17:35:21Z",
   "races": [
     {
       "round": 1,
@@ -148,6 +148,14 @@
     },
     {
       "round": 19,
+      "raceName": "Mexico City Grand Prix",
+      "slug": "mexico-city-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-11-01T20:00:00Z"
+    },
+    {
+      "round": 20,
       "raceName": "Sample Grand Prix",
       "slug": "sample-grand-prix",
       "session": "R",
