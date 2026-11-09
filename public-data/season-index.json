@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-11-02T17:35:21Z",
+  "generatedAt": "2026-11-09T18:00:36Z",
   "races": [
     {
       "round": 1,
@@ -156,6 +156,14 @@
     },
     {
       "round": 20,
+      "raceName": "São Paulo Grand Prix",
+      "slug": "s-o-paulo-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-11-08T17:00:00Z"
+    },
+    {
+      "round": 21,
       "raceName": "Sample Grand Prix",
       "slug": "sample-grand-prix",
       "session": "R",
