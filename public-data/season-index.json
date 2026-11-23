@@ -1,6 +1,6 @@
 {
   "year": 2026,
-  "generatedAt": "2026-11-16T17:41:06Z",
+  "generatedAt": "2026-11-23T19:40:33Z",
   "races": [
     {
       "round": 1,
@@ -164,6 +164,14 @@
     },
     {
       "round": 21,
+      "raceName": "Las Vegas Grand Prix",
+      "slug": "las-vegas-grand-prix",
+      "session": "R",
+      "hasReplay": false,
+      "date": "2026-11-22T04:00:00Z"
+    },
+    {
+      "round": 22,
       "raceName": "Sample Grand Prix",
       "slug": "sample-grand-prix",
       "session": "R",
